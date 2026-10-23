@@ -5,12 +5,29 @@
 <meta name="apple-mobile-web-app-title" content="Training">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="color-scheme" content="light dark">
-<style>:root{color-scheme:light}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:light}[hidden]{display:none!important}
+.tools{display:flex;gap:8px;margin:8px 0}
+.tools select,.tools input,.when input{height:46px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:600 16px var(--f-body);padding:0 8px}
+.tools select{flex:1;min-width:0}
+.tools input{width:92px;text-align:center;font-variant-numeric:tabular-nums}
+.when{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 4px;font-weight:600}
+.when input{min-width:0}
+.h-act{display:flex;gap:8px;grid-column:1 / -1}
+.h-act .ghost{margin-top:4px;flex:1}
+.iobtn{display:flex;gap:8px;margin-top:10px}
+.iobtn .ghost{margin-top:0;flex:1}
+.editnote{margin-top:0}
+</style>
 <title>Mein Trainingsplan</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="theme-color" content="#17794a">
 <style>
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/barlow-400.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:500;font-display:swap;src:url("fonts/barlow-500.woff2") format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:600;font-display:swap;src:url("fonts/barlow-600.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;src:url("fonts/barlow-condensed-600.woff2") format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url("fonts/barlow-condensed-700.woff2") format("woff2")}
 /* Layout: eine Spalte fürs iPhone, oben ein Umschalter (Tag A / Tag B / Verlauf), unten schwebt der Pausen-Timer. */
 :root{
   --bg:#f2f5f1; --surface:#ffffff; --surface2:#e8eee8; --fg:#13201a; --muted:#5a6a60; --line:#d2dbd4;
@@ -152,6 +169,7 @@ body.resting #qbtn,body.resting #qpanel{visibility:hidden}
 
 <div id="rest" role="timer" aria-live="off"><div class="in"><div class="t" id="rt">0:00</div><div class="l" id="rl">Pause</div><button id="r15">+15 s</button><button id="rx">Weiter</button></div></div>
 <div id="toast" role="status"></div>
+<input id="imp-file" type="file" accept="application/json,.json" hidden>
 
 <script>
 const PLAN={
@@ -259,17 +277,177 @@ const QUOTES=[
  {q:"You don't get to go through life only doing the things that you feel like doing.",a:"Andrew Tate"},
  {q:"Everybody wanna be a bodybuilder, but don't nobody wanna lift no heavy ass weight.",a:"Ronnie Coleman"},
  {q:"Ain't nothing to it but to do it.",a:"Ronnie Coleman"},
- {q:"I have nothing in common with lazy people who blame others for their lack of success. Great things come from hard work and perseverance. No excuses.",a:"Kobe Bryant"}
+ {q:"I have nothing in common with lazy people who blame others for their lack of success. Great things come from hard work and perseverance. No excuses.",a:"Kobe Bryant"},
+ {q:"When you're talking about fighting, as it is, with no rules, well then, baby you'd better train every part of your body!",a:"Bruce Lee"},
+ {q:"Use only that which works, and take it from any place you can find it.",a:"Bruce Lee"},
+ {q:"There are no limits. There are plateaus, but you must not stay there, you must go beyond them. If it kills you, it kills you. A man must constantly exceed his level.",a:"Bruce Lee"},
+ {q:"Don't get set into one form, adapt it and build your own, and let it grow, be like water.",a:"Bruce Lee"},
+ {q:"Be water, my friend.",a:"Bruce Lee"},
+ {q:"Running water never grows stale. So you just have to 'keep on flowing.'",a:"Bruce Lee"},
+ {q:"You must have complete determination. The worst opponent you can come across is one whose aim has become an obsession.",a:"Bruce Lee"},
+ {q:"A good martial artist does not become tense, but ready. Not thinking, yet not dreaming. Ready for whatever may come.",a:"Bruce Lee"},
+ {q:"Using no way as way; Having no limitation as limitation.",a:"Bruce Lee"},
+ {q:"You have to keep your reflexes so that when you want it — it's there. When you want to move — you are moving.",a:"Bruce Lee"},
+ {q:"When I look around, I always learn something: to be always yourself, and to express yourself, to have faith in yourself.",a:"Bruce Lee"},
+ {q:"Man, the living creature, the creating individual, is always more important than any established style or system.",a:"Bruce Lee"},
+ {q:"The impediment to action advances action. What stands in the way becomes the way.",a:"Marcus Aurelius"},
+ {q:"The mind adapts and converts to its own purposes the obstacle to our acting.",a:"Marcus Aurelius"},
+ {q:"The things you think about determine the quality of your mind. Your soul takes on the color of your thoughts.",a:"Marcus Aurelius"},
+ {q:"Nothing happens to anyone that he can't endure.",a:"Marcus Aurelius"},
+ {q:"Things have no hold on the soul. They have no access to it, cannot move or direct it. It is moved and directed by itself alone.",a:"Marcus Aurelius"},
+ {q:"Waste no more time arguing what a good man should be. Be one.",a:"Marcus Aurelius"},
+ {q:"At dawn, when you have trouble getting out of bed, tell yourself: 'I have to go to work – as a human being. What do I have to complain of, if I'm going to do what I was born for – the things I was brought into the world to do? Or is this what I was created for? To huddle under the blankets and stay warm?'",a:"Marcus Aurelius"},
+ {q:"An arrow has one motion and the mind another. Even when pausing, even when weighing conclusions, the mind is moving forward, toward its goal.",a:"Marcus Aurelius"},
+ {q:"Non quia difficilia sunt non audemus, sed quia non audemus difficilia sunt.",a:"Seneca"},
+ {q:"Vivere, Lucili, militare est.",a:"Seneca"},
+ {q:"Everybody has plans until they get hit for the first time.",a:"Mike Tyson"},
+ {q:"But everybody don't get up every morning and run, everybody don't go to the gym every morning.",a:"Mike Tyson"},
+ {q:"And everybody don't have enough discipline to wait in the locker room for two hours or three hours, then go in the ring and do what they've been taught all those years in the gym.",a:"Mike Tyson"},
+ {q:"So, that's what separates a champion from a mediocre fighter.",a:"Mike Tyson"},
+ {q:"Talent? I don't believe in talent.",a:"Mike Tyson"},
+ {q:"But as long as you have a lot of determination and willpower, that's all you need. And you have to have is the will to win.",a:"Mike Tyson"},
+ {q:"Rest at the end, not in the middle. I'm always chasing that win. Never done.",a:"Kobe Bryant"},
+ {q:"You have to work hard in the dark to shine in the light.",a:"Kobe Bryant"},
+ {q:"If you want to be a better player, you have to prepare, prepare, and prepare some more.",a:"Kobe Bryant"},
+ {q:"The mindset isn't about seeking a result—it's more about the process of getting to that result.",a:"Kobe Bryant"},
+ {q:"I never felt outside pressure. I knew what I wanted to accomplish, and I knew how much work it took to achieve those goals.",a:"Kobe Bryant"},
+ {q:"Those times when you get up early and you work hard, those times when you stay up late and you work hard, those times when you don't feel like working, you're too tired, you don't want to push yourself, but you do it anyway. That is actually the dream.",a:"Kobe Bryant"},
+ {q:"When you want to succeed as bad as you want to breathe, then you'll be successful.",a:"Eric Thomas"},
+ {q:"Pain is temporary. It may last for a minute, or an hour or a day, or even a year. But eventually, it will subside. And something else take its place. If I quit, however, it will last forever.",a:"Eric Thomas"},
+ {q:"You don't have to be great to get started, but you have to get started to be great.",a:"Les Brown"},
+ {q:"It's not over until I win.",a:"Les Brown"},
+ {q:"There's no talent here, this is hard work. This is an obsession.",a:"Conor McGregor"},
+ {q:"Talent does not exist; we are all equals as human beings. You could be anyone if you put in the time. You will reach the top, and that's that. I am not talented, I am obsessed.",a:"Conor McGregor"},
+ {q:"If you have talent but don't work hard, you won't win anything.",a:"Cristiano Ronaldo"},
+ {q:"In my career, I've always worked hard in training and games. It's hard work which achieves success.",a:"Cristiano Ronaldo"},
+ {q:"A good plan today is better than a perfect plan tomorrow.",a:"Andrew Tate"},
+ {q:"There is no replacement for effort.",a:"Andrew Tate"},
+ {q:"If failure makes you stronger, you can never lose.",a:"Andrew Tate"},
+ {q:"One of the only things that you can control in this world is your state of mind.",a:"Andrew Tate"},
+ {q:"Value is linked to difficulty. If you want something that is valuable, you need something which is difficult to obtain.",a:"Andrew Tate"},
+ {q:"Arrogance breeds complacency and complacency breeds failure.",a:"Andrew Tate"},
+ {q:"Everybody can preach positivity in the sunshine. Real heroes are positive in the rain.",a:"Andrew Tate"},
+ {q:"Life will never come to you. You must come to life.",a:"Andrew Tate"},
+ {q:"Raw action solves everything.",a:"Andrew Tate"},
+ {q:"Every action you take is molding who you are as a person.",a:"Andrew Tate"},
+ {q:"Success loves speed.",a:"Andrew Tate"},
+ {q:"Are you good enough on your worst day to defeat your opponents on their best day?",a:"Andrew Tate"},
+ {q:"The amount of stress you can tolerate while remaining effective is directly correlated to the level of success you will enjoy.",a:"Andrew Tate"},
+ {q:"Every day that you make the wrong choice, more of your potential is wasted.",a:"Andrew Tate"},
+ {q:"Find a person who is as successful as you'd like to be. Ask them what to do. Then do it and work hard.",a:"Andrew Tate"},
+ {q:"Today you can act as an amateur or a professional. Decide what you will do right now.",a:"Andrew Tate"},
+ {q:"Emotional control isn't a lack of emotion, it's a necessary function of maturity.",a:"Andrew Tate"},
+ {q:"Have you taken advantage of the few things you actually control?",a:"Andrew Tate"},
+ {q:"The amount of work you find to do is directly correlated to how much you care.",a:"Andrew Tate"},
+ {q:"Der Sport macht sie zu besseren Menschen.",a:"Kontra K"},
+ {q:"Angst besteht darin, etwas schlecht zu machen.",a:"Kontra K"},
+ {q:"Du erntest, was du säst.",a:"Kontra K"},
+ {q:"Mit meinem Arbeitswahn habe ich einfach die Leute dahinter angesteckt.",a:"Kontra K"},
+ {q:"Ich stecke mir halt sehr große Ziele und die möchte ich erreichen.",a:"Kontra K"},
+ {q:"Du solltest Respekt haben. Angst ist verkehrt, weil du dann zu vorsichtig wirst.",a:"Kontra K"},
+ {q:"Aber ich habe die Sache ernst genommen, ein Jahr lang 90 Prozent meiner Zeit ins Texteschreiben und Rappen gesteckt und trainiert, trainiert, trainiert.",a:"Kollegah"},
+ {q:"Dann macht man nämlich nicht den Fehler und vergeudet seine Zeit im Fitnessstudio.",a:"Kollegah"},
+ {q:"There are no shortcuts. There are no hacks.",a:"Jocko Willink"},
+ {q:"If you want to take the easy road, I promise you: it's longer and more painful than the hard road.",a:"Jocko Willink"},
+ {q:"Discipline is something you dictate.",a:"Jocko Willink"},
+ {q:"Make discipline part of your daily life and your daily life will get better.",a:"Jocko Willink"},
+ {q:"Motivation won't stay up late and finish a project for you; discipline will.",a:"Jocko Willink"},
+ {q:"Get after it.",a:"Jocko Willink"},
+ {q:"Just as words can be redefined, never doubt that we can redefine ourselves.",a:"David Goggins"},
+ {q:"The only way to get there is to continually seek greatness and always be willing to try one more time.",a:"David Goggins"},
+ {q:"I'll look them dead in the eye and respond with one simple question. What if?",a:"David Goggins"},
+ {q:"This is why I say 'stay hard,' because when you weren't given the gifts, the only thing you can do in life is stay hard.",a:"David Goggins"},
+ {q:"I never thought of losing, but now that it's happened, the only thing is to do it right. That's my obligation to all the people who believe in me. We all have to take defeats in life.",a:"Muhammad Ali"},
+ {q:"I figured that if I said it enough, I would convince the world that I really was the greatest.",a:"Muhammad Ali"},
+ {q:"It's a lack of faith that makes people afraid of meeting challenges, and I believe in myself.",a:"Muhammad Ali"},
+ {q:"I was one who did not conform and whose will could not be broken.",a:"Arnold Schwarzenegger"},
+ {q:"Every time I got hit, and every time someone said, 'You can't do this,' I said, 'This is not going to be for much longer, because I'm going to move out of here.'",a:"Arnold Schwarzenegger"},
+ {q:"Ich habe gelernt, was ich mit den richtigen Plänen, dem nötigen Wissen und Disziplin erreichen kann – sowohl körperlich als auch mental.",a:"David Lengauer"},
 ];
-const GOAL=100, LS="trainingsapp.v1", HCAP=120;
+const LS="trainingsapp.v1";
 const $=s=>document.querySelector(s);
 const newCur=()=>({sets:{},pain:null});
-let S={v:1,u:0,week:1,cur:{A:newCur(),B:newCur()},hist:[]};
-let tab="A", confirmDel=false, syncMode="local";
-
-/* ---------- Speicher ---------- */
-try{const r=localStorage.getItem(LS); if(r){const o=JSON.parse(r); if(o&&o.cur) S=o;}}catch(e){}
+let tab="A", confirmDel=null, confirmTimer=null, syncMode="local";
+let editing=null, pendingDate=null, pendingImport=null, chartId="A1";
 let ref=null, saving=false, dirty=false, wt=null;
+
+function exOf(id){return [...PLAN.A.ex,...PLAN.B.ex].find(e=>e.id===id)}
+function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function ymd(d){const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())}
+function todayYmd(){return ymd(new Date())}
+function noonTs(s){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||"");
+  if(!m) return Date.now();
+  const d=new Date(+m[1], +m[2]-1, +m[3], 12, 0, 0, 0);
+  return isNaN(d.getTime())?Date.now():d.getTime();
+}
+function sanitizeCur(c){
+  const out={sets:{},pain:null};
+  if(c&&c.sets&&typeof c.sets==="object"&&!Array.isArray(c.sets)){
+    Object.keys(c.sets).forEach(id=>{
+      if(!Array.isArray(c.sets[id])) return;
+      out.sets[id]=c.sets[id].map(s=>({kg:s&&s.kg!=null?String(s.kg):"",reps:s&&s.reps!=null?String(s.reps):"",done:!!(s&&s.done)}));
+    });
+  }
+  if(c&&(c.pain==="g"||c.pain==="y"||c.pain==="r")) out.pain=c.pain;
+  return out;
+}
+function sanitizeSets(sets){
+  const out={};
+  if(!sets||typeof sets!=="object"||Array.isArray(sets)) return out;
+  Object.keys(sets).forEach(id=>{
+    if(!Array.isArray(sets[id])) return;
+    const rows=sets[id].map(x=>String(x??"")).filter(x=>x.length);
+    if(rows.length) out[id]=rows;
+  });
+  return out;
+}
+function migrate(raw){
+  const src=(raw&&typeof raw==="object"&&!Array.isArray(raw))?raw:{};
+  const hadGoals=!!(src.goals&&typeof src.goals==="object"&&!Array.isArray(src.goals));
+  const next={
+    v:1,
+    u:typeof src.u==="number"&&isFinite(src.u)?src.u:0,
+    week:Math.max(1,Math.min(40,Math.round(Number(src.week))||1)),
+    cur:{A:sanitizeCur(src.cur&&src.cur.A),B:sanitizeCur(src.cur&&src.cur.B)},
+    hist:[],
+    goals:{}
+  };
+  if(Array.isArray(src.hist)){
+    src.hist.forEach(h=>{
+      if(!h||typeof h!=="object"||Array.isArray(h)) return;
+      const t=Number(h.t);
+      next.hist.push({
+        t:isFinite(t)?t:Date.now(),
+        day:h.day==="B"?"B":"A",
+        week:Math.max(1,Math.min(40,Math.round(Number(h.week))||1)),
+        pain:(h.pain==="g"||h.pain==="y"||h.pain==="r")?h.pain:null,
+        sets:sanitizeSets(h.sets)
+      });
+    });
+  }
+  if(hadGoals){
+    Object.keys(src.goals).forEach(k=>{
+      const n=Number(src.goals[k]);
+      if(isFinite(n)&&n>0) next.goals[k]=n;
+    });
+  }else next.goals={A1:100,B1:100};
+  return {state:next, goalsAdded:!hadGoals};
+}
+
+let S={v:1,u:0,week:1,cur:{A:newCur(),B:newCur()},hist:[],goals:{A1:100,B1:100}};
+let goalsAdded=false;
+try{
+  const r=localStorage.getItem(LS);
+  if(r){
+    const o=JSON.parse(r);
+    if(o&&o.cur){
+      const m=migrate(o);
+      S=m.state; goalsAdded=m.goalsAdded;
+    }
+  }
+}catch(e){}
+
 function persist(){
   S.u=Date.now();
   try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
@@ -281,19 +459,56 @@ function flush(){
   saving=true; dirty=false;
   ref.set({state:JSON.parse(JSON.stringify(S))}).then(()=>{syncMode="cloud"}).catch(()=>{syncMode="local"}).finally(()=>{saving=false; if(dirty) flush()});
 }
+if(goalsAdded) persist();
 
 /* ---------- Hilfen ---------- */
-const exOf=id=>[...PLAN.A.ex,...PLAN.B.ex].find(e=>e.id===id);
 const parse=s=>{const m=String(s).split("x");return{kg:m[0],reps:m[1]||""}};
 const num=v=>parseFloat(String(v).replace(",","."))||0;
-function lastSets(id){for(let i=S.hist.length-1;i>=0;i--){const a=S.hist[i].sets[id]; if(a&&a.length) return a}return null}
+function dispKg(kg){
+  if(kg==null) return "—";
+  const s=String(kg).trim();
+  if(s==="") return "—";
+  const n=parseFloat(s.replace(",","."));
+  return isFinite(n)?fmt(n):"—";
+}
+function lastSets(id){
+  for(let i=S.hist.length-1;i>=0;i--){
+    if(editing&&editing.i===i) continue;
+    const a=S.hist[i].sets[id];
+    if(a&&a.length) return a;
+  }
+  return null;
+}
 function ph(id,i){const l=lastSets(id); if(!l) return {kg:"",reps:""}; return parse(l[i]!==undefined?l[i]:l[l.length-1])}
 function blank(e){return Array.from({length:e.sets},()=>({kg:"",reps:"",done:false}))}
-function setsFor(day,e){const c=S.cur[day]; return c.sets[e.id]||(c.sets[e.id]=blank(e))}
+function activeCur(day){
+  if(editing&&editing.day===day) return editing.cur;
+  if(!S.cur[day]) S.cur[day]=newCur();
+  return S.cur[day];
+}
+function setsFor(day,e){const c=activeCur(day); return c.sets[e.id]||(c.sets[e.id]=blank(e))}
 const e1=(kg,reps)=>kg*(1+reps/30);
 const fmt=n=>(Math.round(n*10)/10).toString().replace(".",",");
 const dstr=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),1800)}
+function storeDate(v){if(editing&&editing.day===tab) editing.date=v; else pendingDate=v}
+function allEx(){return [...PLAN.A.ex.map(e=>({day:"A",e})),...PLAN.B.ex.map(e=>({day:"B",e}))]}
+function importSummary(o){
+  const n=o.hist.length, w="Woche "+o.week;
+  const full=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
+  if(!n) return "Keine Einheiten in der Datei. "+w+".";
+  const ts=o.hist.map(h=>h.t).filter(t=>isFinite(t)).sort((a,b)=>a-b);
+  const span=full(ts[0])+(ts.length>1?" bis "+full(ts[ts.length-1]):"");
+  return n+" "+(n===1?"Einheit":"Einheiten")+", "+span+", "+w+".";
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(S)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="trainingsapp.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1500);
+}
 
 /* ---------- Pausen-Timer ---------- */
 let tEnd=0, tTimer=null, tLabel="", actx=null, tDone=false;
@@ -330,62 +545,99 @@ function rowHtml(day,e,i){
   const s=setsFor(day,e)[i], p=ph(e.id,i);
   return `<div class="row${s.done?" done":""}" data-row="${e.id}:${i}">
     <div class="sn">${i+1}</div>
-    <label class="f"><input inputmode="decimal" id="kg-${e.id}-${i}" data-f="${e.id}:${i}:kg" value="${s.kg}" placeholder="${p.kg||"kg"}" aria-label="Gewicht Satz ${i+1}"><small>kg</small></label>
-    <label class="f"><input inputmode="numeric" id="re-${e.id}-${i}" data-f="${e.id}:${i}:reps" value="${s.reps}" placeholder="${p.reps||"Wdh"}" aria-label="Wiederholungen Satz ${i+1}"><small>×</small></label>
+    <label class="f"><input inputmode="decimal" id="kg-${e.id}-${i}" data-f="${e.id}:${i}:kg" value="${esc(s.kg)}" placeholder="${esc(p.kg||"kg")}" aria-label="Gewicht Satz ${i+1}"><small>kg</small></label>
+    <label class="f"><input inputmode="numeric" id="re-${e.id}-${i}" data-f="${e.id}:${i}:reps" value="${esc(s.reps)}" placeholder="${esc(p.reps||"Wdh")}" aria-label="Wiederholungen Satz ${i+1}"><small>×</small></label>
     <button class="chk" data-chk="${e.id}:${i}" aria-label="Satz ${i+1} erledigt">${chkSvg}</button></div>`;
 }
 function cardHtml(day,e){
   const l=lastSets(e.id);
-  const last=l?`Letztes Mal: ${l.map(x=>{const q=parse(x);return fmt(num(q.kg))+"×"+q.reps}).join(" · ")}`:"Noch keine Werte gespeichert";
-  return `<section class="card${e.ss?" ss":""}"><div class="ex-h"><div class="no">${e.no}</div><div><h3>${e.n}</h3><div class="hint">${e.h}</div></div></div>
-   <div class="tags"><span class="tag">${e.sets} × ${e.reps}</span><span class="tag">${e.p}</span></div>
+  const last=l?`Letztes Mal: ${l.map(x=>{const q=parse(x);return dispKg(q.kg)+"×"+esc(q.reps)}).join(" · ")}`:"Noch keine Werte gespeichert";
+  return `<section class="card${e.ss?" ss":""}"><div class="ex-h"><div class="no">${esc(e.no)}</div><div><h3>${esc(e.n)}</h3><div class="hint">${esc(e.h)}</div></div></div>
+   <div class="tags"><span class="tag">${e.sets} × ${esc(e.reps)}</span><span class="tag">${esc(e.p)}</span></div>
    <div class="last">${last}</div>
    <div class="sets">${Array.from({length:e.sets},(_,i)=>rowHtml(day,e,i)).join("")}</div></section>`;
 }
 function trainHtml(day){
-  const c=S.cur[day];
+  const c=activeCur(day);
+  const editingHere=!!(editing&&editing.day===day);
+  const dateVal=editingHere?editing.date:(pendingDate||todayYmd());
   const btn=(k,t)=>`<button data-pain="${k}" aria-pressed="${c.pain===k}"><i></i>${t}</button>`;
-  return `<p class="sub">${PLAN[day].sub}</p>
+  const banner=editingHere?`<p class="note editnote">Änderung der Einheit vom ${esc(dstr(noonTs(editing.date||todayYmd())))}.</p>`:"";
+  const cancel=editingHere?`<button type="button" class="ghost" id="cancel-edit">Abbrechen</button>`:"";
+  return `${banner}<p class="sub">${PLAN[day].sub}</p>
    <div class="pain"><h2>Ellenbogen heute</h2><div class="lights">${btn("g","Grün")}${btn("y","Gelb")}${btn("r","Rot")}</div><p>${c.pain?PAIN[c.pain]:"Vor dem Training kurz prüfen, wie der Ellenbogen sich anfühlt."}</p></div>
    ${PLAN[day].ex.map(e=>cardHtml(day,e)).join("")}
-   <button class="primary" id="fin">Einheit abschließen</button>
-   <p class="note">Leere Felder übernehmen beim Abhaken den Wert vom letzten Mal (graue Zahl). Der Pausen-Timer startet automatisch.</p>`;
+   <label class="when">Datum<input type="date" id="when" value="${esc(dateVal)}" aria-label="Datum der Einheit"></label>
+   <button class="primary" id="fin">${editingHere?"Änderungen speichern":"Einheit abschließen"}</button>
+   ${cancel}
+   <p class="note">Leere Felder übernehmen beim Abhaken den Wert vom letzten Mal (graue Zahl). Ein leeres Gewicht bleibt leer und wird nicht als 0 kg gespeichert. Der Pausen-Timer startet automatisch.</p>`;
 }
-function benchPoints(){
+function exPoints(id){
   return S.hist.map(h=>{let best=null;
-    ["A1","B1"].forEach(id=>(h.sets[id]||[]).forEach(x=>{const q=parse(x),k=num(q.kg),r=num(q.reps); if(k>0&&r>0){const v=e1(k,r); if(!best||v>best.v) best={v,k,r}}}));
+    (h.sets[id]||[]).forEach(x=>{const q=parse(x),k=num(q.kg),r=num(q.reps); if(k>0&&r>0){const v=e1(k,r); if(!best||v>best.v) best={v,k,r}}});
     return best?{t:h.t,v:best.v,k:best.k,r:best.r}:null}).filter(Boolean);
 }
-function chartSvg(pts){
-  const W=340,H=190,L=34,R=14,T=14,B=24;
-  const lo0=pts.length?Math.min(...pts.map(p=>p.v)):70;
-  const lo=Math.floor((Math.min(lo0,GOAL-20)-4)/5)*5, hi=GOAL+2;
+function chartSvg(pts, goal){
+  const W=340,H=190,L=38,R=12,T=16,B=22;
+  const vals=pts.map(p=>p.v);
+  if(goal) vals.push(goal);
+  let lo,hi;
+  if(!vals.length){lo=0;hi=20}
+  else{
+    let mn=Math.min(...vals), mx=Math.max(...vals);
+    if(mx===mn){mn-=5;mx+=5}
+    const span0=mx-mn, pad=Math.max(2,span0*0.15);
+    lo=Math.floor((mn-pad)/5)*5;
+    hi=Math.ceil((mx+pad)/5)*5;
+    if(hi<=lo) hi=lo+10;
+  }
   const y=v=>T+(hi-v)/(hi-lo)*(H-T-B);
   const n=Math.max(pts.length,2), x=i=>L+(i/(n-1))*(W-L-R);
   let g="";
-  const step=(hi-lo)>40?10:5;
-  for(let v=Math.ceil(lo/step)*step;v<GOAL;v+=step) g+=`<line class="ax" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="tx" x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
-  g+=`<line class="goal" x1="${L}" x2="${W-R}" y1="${y(GOAL)}" y2="${y(GOAL)}"/><text class="gtx" x="${W-R}" y="${y(GOAL)-5}" text-anchor="end">Ziel ${GOAL} kg</text>`;
+  const span=hi-lo, step=span>80?20:span>40?10:5;
+  for(let v=Math.ceil(lo/step)*step;v<hi;v+=step){
+    if(goal&&Math.abs(v-goal)<step*0.35) continue;
+    g+=`<line class="ax" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="tx" x="${L-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+  }
+  if(goal){
+    const gy=y(goal), labelY=gy<28?gy+14:gy-5;
+    g+=`<line class="goal" x1="${L}" x2="${W-R}" y1="${gy}" y2="${gy}"/><text class="gtx" x="${W-R}" y="${labelY}" text-anchor="end">Ziel ${fmt(goal)} kg</text>`;
+  }
   if(pts.length){
     g+=`<polyline class="ln" points="${pts.map((p,i)=>x(i)+","+y(p.v)).join(" ")}"/>`;
     g+=pts.map((p,i)=>`<circle class="pt" cx="${x(i)}" cy="${y(p.v)}" r="5"/>`).join("");
-    g+=`<text class="tx" x="${x(0)}" y="${H-6}" text-anchor="start">${dstr(pts[0].t)}</text>`;
-    if(pts.length>1) g+=`<text class="tx" x="${x(pts.length-1)}" y="${H-6}" text-anchor="end">${dstr(pts[pts.length-1].t)}</text>`;
+    g+=`<text class="tx" x="${x(0)}" y="${H-6}" text-anchor="start">${esc(dstr(pts[0].t))}</text>`;
+    if(pts.length>1) g+=`<text class="tx" x="${x(pts.length-1)}" y="${H-6}" text-anchor="end">${esc(dstr(pts[pts.length-1].t))}</text>`;
   }
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Geschätztes Bankdrück-Maximum im Verlauf">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Geschätztes Maximum im Verlauf">${g}</svg>`;
 }
 function histHtml(){
-  const pts=benchPoints(), last=pts[pts.length-1];
+  const chosen=exOf(chartId)?chartId:PLAN.A.ex[0].id;
+  chartId=chosen;
+  const ex=exOf(chosen), pts=exPoints(chosen), last=pts[pts.length-1], goal=S.goals[chosen]||null;
+  const opts=allEx().map(({day,e})=>`<option value="${e.id}"${e.id===chosen?" selected":""}>Tag ${day} · ${esc(e.n)}</option>`).join("");
   const head=last?`<div class="big">${fmt(last.v)} <small>kg geschätzt</small></div><div class="sub" style="margin:0">Letzter Top-Satz: ${fmt(last.k)} kg × ${last.r}</div>`
-    :`<p class="empty">Nach der ersten Einheit erscheint hier deine Kurve zu ${GOAL} kg. Grundlage ist dein bester Bankdrück-Satz (geschätztes Maximum nach Epley).</p>`;
-  const list=S.hist.slice(-10).reverse().map(h=>{
+    :`<p class="empty">Nach dem ersten Satz mit Gewicht erscheint hier die Kurve. Grundlage ist der beste Satz dieser Übung (geschätztes Maximum nach Epley).</p>`;
+  const rows=S.hist.map((h,i)=>i).reverse().map(i=>{
+    const h=S.hist[i];
     const n=Object.values(h.sets).reduce((a,b)=>a+b.length,0);
-    const bid=h.sets.A1?"A1":(h.sets.B1?"B1":null); let top="";
-    if(bid){const a=h.sets[bid]; const m=a.reduce((m,c)=>num(parse(c).kg)>=num(parse(m).kg)?c:m,a[0]); const q=parse(m); top=" · Bank "+fmt(num(q.kg))+"×"+q.reps}
-    return `<div class="h-i"><b>${h.pain?`<i class="dot ${h.pain}"></i>`:""}Tag ${h.day} · Woche ${h.week}</b><span>${dstr(h.t)}</span><span>${n} Sätze${top}</span><span></span></div>`}).join("");
-  const del=S.hist.length?`<button class="ghost${confirmDel?" warn":""}" id="del">${confirmDel?"Wirklich letzte Einheit löschen?":"Letzte Einheit löschen"}</button>`:"";
-  return `<div class="chart"><h2>Bankdrücken</h2>${head}${chartSvg(pts)}</div>
-   <div class="hist"><h2>Letzte Einheiten</h2>${list||'<p class="empty">Noch keine Einheit gespeichert.</p>'}${del}</div>
+    const bid=h.sets.A1?"A1":(h.sets.B1?"B1":null);
+    let top="";
+    if(bid){
+      const a=h.sets[bid];
+      const m=a.reduce((best,c)=>num(parse(c).kg)>=num(parse(best).kg)?c:best,a[0]);
+      const q=parse(m);
+      top=" · Bank "+dispKg(q.kg)+"×"+esc(q.reps);
+    }
+    return `<div class="h-i"><b>${h.pain?`<i class="dot ${h.pain}"></i>`:""}Tag ${h.day} · Woche ${h.week}</b><span>${esc(dstr(h.t))}</span><span>${n} Sätze${top}</span><span></span><div class="h-act"><button type="button" class="ghost" data-edit="${i}">Ändern</button><button type="button" class="ghost${confirmDel===i?" warn":""}" data-del="${i}">${confirmDel===i?"Wirklich löschen?":"Löschen"}</button></div></div>`;
+  }).join("");
+  const imp=pendingImport?`<p class="note" id="imp-sum">${esc(importSummary(pendingImport))}</p><div class="iobtn"><button type="button" class="ghost warn" id="imp-ok">Wirklich laden?</button><button type="button" class="ghost" id="imp-no">Abbrechen</button></div>`:"";
+  return `<div class="chart"><h2>${esc(ex.n)}</h2>
+    <div class="tools"><select id="chart-ex" aria-label="Übung">${opts}</select><input id="goal" inputmode="decimal" aria-label="Zielgewicht in Kilogramm" placeholder="Ziel" value="${goal?esc(String(goal)):""}"></div>
+    ${head}${pts.length||goal?chartSvg(pts,goal):""}</div>
+   <div class="hist"><h2>Einheiten</h2>${rows||'<p class="empty">Noch keine Einheit gespeichert.</p>'}</div>
+   <div class="iobtn"><button type="button" class="ghost" id="exp">Daten sichern</button><button type="button" class="ghost" id="imp">Daten laden</button></div>
+   ${imp}
    <p class="note">${syncMode==="cloud"?"Deine Werte sind auf diesem Handy gespeichert.":"Deine Werte sind nur auf diesem Gerät gespeichert."}</p>`;
 }
 function render(){
@@ -397,39 +649,145 @@ function render(){
 /* ---------- Eingaben ---------- */
 const app=$("#app");
 app.addEventListener("input",ev=>{
+  if(ev.target.id==="when"){storeDate(ev.target.value); return}
   const f=ev.target.dataset&&ev.target.dataset.f; if(!f) return;
-  const [id,i,k]=f.split(":"); const e=exOf(id);
+  const [id,i,k]=f.split(":"); const e=exOf(id); if(!e) return;
   setsFor(tab,e)[+i][k]=ev.target.value.replace(",",".");
-  persist();
+  if(!(editing&&editing.day===tab)) persist();
+});
+app.addEventListener("change",ev=>{
+  const el=ev.target;
+  if(el.id==="when"){storeDate(el.value); return}
+  if(el.id==="chart-ex"){chartId=el.value; render(); return}
+  if(el.id==="goal"){
+    const raw=el.value.trim().replace(",",".");
+    if(raw==="") delete S.goals[chartId];
+    else{
+      const n=parseFloat(raw);
+      if(!(isFinite(n)&&n>0)) return;
+      S.goals[chartId]=n;
+    }
+    persist(); render();
+  }
 });
 app.addEventListener("click",ev=>{
   const t=ev.target.closest("button"); if(!t) return;
-  if(t.dataset.pain){S.cur[tab].pain=S.cur[tab].pain===t.dataset.pain?null:t.dataset.pain; persist(); render(); return}
+  if(t.dataset.pain){
+    const c=activeCur(tab);
+    c.pain=c.pain===t.dataset.pain?null:t.dataset.pain;
+    if(!(editing&&editing.day===tab)) persist();
+    render(); return;
+  }
   if(t.dataset.chk){
-    const [id,i]=t.dataset.chk.split(":"); const e=exOf(id); const s=setsFor(tab,e)[+i]; const row=t.closest(".row");
+    const [id,i]=t.dataset.chk.split(":"); const e=exOf(id); if(!e) return;
+    const s=setsFor(tab,e)[+i]; const row=t.closest(".row");
     if(!s.done){
       const p=ph(id,+i);
       const reps=s.reps!==""?s.reps:p.reps;
       if(reps===""){row.classList.add("shake");setTimeout(()=>row.classList.remove("shake"),300);row.querySelector('[data-f$=":reps"]').focus();return}
-      s.reps=reps; if(s.kg==="") s.kg=p.kg||"0";
+      s.reps=reps; if(s.kg==="") s.kg=p.kg||"";
       s.done=true; rtStart(e.rest,e.n+", Satz "+(+i+1));
     } else s.done=false;
     row.classList.toggle("done",s.done);
     row.querySelector('[data-f$=":kg"]').value=s.kg; row.querySelector('[data-f$=":reps"]').value=s.reps;
-    persist(); return;
+    if(!(editing&&editing.day===tab)) persist();
+    return;
   }
   if(t.id==="fin"){
-    const c=S.cur[tab], sets={}; let n=0;
-    PLAN[tab].ex.forEach(e=>{const a=(c.sets[e.id]||[]).filter(s=>s.done).map(s=>(s.kg||"0")+"x"+s.reps); if(a.length){sets[e.id]=a;n+=a.length}});
+    const editingHere=!!(editing&&editing.day===tab);
+    const c=activeCur(tab);
+    const sets=editingHere&&S.hist[editing.i]?Object.assign({},S.hist[editing.i].sets):{};
+    let n=0;
+    PLAN[tab].ex.forEach(e=>{
+      const a=(c.sets[e.id]||[]).filter(s=>s.done).map(s=>{
+        const kg=s.kg==null?"":String(s.kg).trim();
+        return kg+"x"+s.reps;
+      });
+      if(a.length){sets[e.id]=a; n+=a.length}
+      else delete sets[e.id];
+    });
     if(!n){toast("Noch kein Satz abgehakt");return}
-    S.hist.push({t:Date.now(),day:tab,week:S.week,pain:c.pain,sets}); if(S.hist.length>HCAP) S.hist.splice(0,S.hist.length-HCAP);
-    S.cur[tab]=newCur(); rtHide(); persist(); render(); window.scrollTo(0,0); toast("Einheit gespeichert ("+n+" Sätze)"); return;
+    const whenEl=$("#when");
+    const dateStr=(whenEl&&whenEl.value)||todayYmd();
+    const ts=noonTs(dateStr);
+    if(editingHere){
+      const h=S.hist[editing.i];
+      if(h){h.t=ts; h.pain=c.pain; h.sets=sets}
+      editing=null;
+      toast("Änderungen gespeichert");
+    }else{
+      S.hist.push({t:ts,day:tab,week:S.week,pain:c.pain,sets});
+      S.cur[tab]=newCur();
+      pendingDate=null;
+      toast("Einheit gespeichert ("+n+" Sätze)");
+    }
+    rtHide(); persist(); render(); window.scrollTo(0,0); return;
   }
-  if(t.id==="del"){ if(!confirmDel){confirmDel=true;render();setTimeout(()=>{if(confirmDel){confirmDel=false;if(tab==="V")render()}},4000)} else {confirmDel=false;S.hist.pop();persist();render();toast("Gelöscht")} return}
+  if(t.id==="cancel-edit"){editing=null; render(); toast("Änderung verworfen"); return}
+  if(t.dataset.edit!=null){
+    const i=+t.dataset.edit, h=S.hist[i]; if(!h) return;
+    const day=h.day==="B"?"B":"A";
+    const cur={sets:{},pain:h.pain};
+    PLAN[day].ex.forEach(e=>{
+      const saved=h.sets[e.id]||[];
+      cur.sets[e.id]=Array.from({length:e.sets},(_,k)=>{
+        if(saved[k]==null) return {kg:"",reps:"",done:false};
+        const q=parse(saved[k]);
+        return {kg:q.kg,reps:q.reps,done:true};
+      });
+    });
+    editing={i,day,date:ymd(new Date(h.t)),cur};
+    tab=day; confirmDel=null;
+    render(); window.scrollTo(0,0); return;
+  }
+  if(t.dataset.del!=null){
+    const i=+t.dataset.del;
+    if(confirmDel!==i){
+      confirmDel=i;
+      clearTimeout(confirmTimer);
+      confirmTimer=setTimeout(()=>{confirmDel=null; if(tab==="V") render()},4000);
+      render();
+    }else{
+      clearTimeout(confirmTimer); confirmDel=null;
+      S.hist.splice(i,1);
+      if(editing){
+        if(editing.i===i) editing=null;
+        else if(editing.i>i) editing.i--;
+      }
+      persist(); render(); toast("Gelöscht");
+    }
+    return;
+  }
+  if(t.id==="exp"){exportData(); return}
+  if(t.id==="imp"){$("#imp-file").click(); return}
+  if(t.id==="imp-no"){pendingImport=null; render(); return}
+  if(t.id==="imp-ok"&&pendingImport){
+    S=pendingImport;
+    pendingImport=null; editing=null; pendingDate=null; confirmDel=null;
+    persist(); render(); toast("Daten geladen");
+  }
 });
-$("#seg").addEventListener("click",ev=>{const b=ev.target.closest("button[data-tab]"); if(!b) return; tab=b.dataset.tab; confirmDel=false; render(); window.scrollTo(0,0)});
+$("#imp-file").addEventListener("change",ev=>{
+  const f=ev.target.files&&ev.target.files[0];
+  ev.target.value="";
+  if(!f) return;
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const o=JSON.parse(String(reader.result));
+      if(!o||typeof o!=="object"||Array.isArray(o)) throw new Error("bad");
+      pendingImport=migrate(o).state;
+      tab="V"; confirmDel=null;
+      render();
+    }catch(err){toast("Datei nicht lesbar")}
+  };
+  reader.onerror=()=>toast("Datei nicht lesbar");
+  reader.readAsText(f);
+});
+$("#seg").addEventListener("click",ev=>{const b=ev.target.closest("button[data-tab]"); if(!b) return; tab=b.dataset.tab; confirmDel=null; render(); window.scrollTo(0,0)});
 $("#wm").onclick=()=>{S.week=Math.max(1,S.week-1);persist();$("#wk").textContent="Woche "+S.week};
 $("#wp").onclick=()=>{S.week=Math.min(40,S.week+1);persist();$("#wk").textContent="Woche "+S.week};
+
 
 /* ---------- Zitate ---------- */
 let qi=0;
@@ -450,5 +808,6 @@ qbtn.onclick=()=>{
 $("#qnext").onclick=()=>qShow(qi+1);
 document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&qbtn.getAttribute("aria-expanded")==="true") qbtn.click()});
 render();
+if("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(()=>{});
 </script>
 </body></html>
