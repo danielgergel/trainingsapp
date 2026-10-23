@@ -118,7 +118,18 @@ h1{font-family:var(--f-disp);font-weight:700;font-size:30px;letter-spacing:.01em
 #rest.end{background:var(--accent);color:var(--accent-fg)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(86px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:20px;font-weight:600;font-size:14px;z-index:10;opacity:0;pointer-events:none;transition:opacity .2s}
 #toast.on{opacity:1}
-@media (prefers-reduced-motion:reduce){.shake{animation:none}#toast{transition:none}}
+.qbox{display:flex;flex-direction:column;align-items:center;margin-top:8px}
+#qbtn{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--muted);cursor:pointer;display:grid;place-items:center;padding:0}
+#qbtn svg{width:22px;height:22px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round;transition:transform .15s}
+#qbtn[aria-expanded="true"] svg{transform:rotate(180deg)}
+#qpanel{width:100%;max-height:46vh;overflow:auto;margin:0 0 8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px}
+#qpanel blockquote{margin:0;font-size:16px;font-weight:500;line-height:1.35}
+#qpanel .qr{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+#qpanel .qa{color:var(--muted);font-size:13px;font-weight:600}
+#qnext{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;display:grid;place-items:center;flex:none;padding:0}
+#qnext svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.4;fill:none;stroke-linecap:round;stroke-linejoin:round}
+body.resting #qbtn,body.resting #qpanel{visibility:hidden}
+@media (prefers-reduced-motion:reduce){.shake{animation:none}#toast{transition:none}#qbtn svg{transition:none}}
 </style>
 
 <div class="wrap">
@@ -133,6 +144,10 @@ h1{font-family:var(--f-disp);font-weight:700;font-size:30px;letter-spacing:.01em
   </div>
 </header>
 <main id="app"></main>
+<div class="qbox">
+<div id="qpanel" hidden><blockquote id="qq"></blockquote><div class="qr"><span class="qa" id="qa"></span><button type="button" id="qnext" aria-label="Nächstes Zitat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div>
+<button type="button" id="qbtn" aria-expanded="false" aria-controls="qpanel" aria-label="Zitat anzeigen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14l6-6 6 6"/></svg></button>
+</div>
 </div>
 
 <div id="rest" role="timer" aria-live="off"><div class="in"><div class="t" id="rt">0:00</div><div class="l" id="rl">Pause</div><button id="r15">+15 s</button><button id="rx">Weiter</button></div></div>
@@ -167,6 +182,85 @@ const PAIN={
  y:"Gelb (3–4 von 10): Gewicht senken, Straps nutzen, Griffe lockerer.",
  r:"Rot (5+ von 10): Zug- und Druckübungen mit Schmerz stoppen."
 };
+const QUOTES=[
+ {q:"Du bist nur so gut wie du trainierst.",a:"Kontra K"},
+ {q:"Nur wenn du diszipliniert bist, bist du gut in dem, was du machst.",a:"Kontra K"},
+ {q:"Du wirst einen Kampf nur gewinnen, wenn du gut trainiert hast.",a:"Kontra K"},
+ {q:"Man erntet schlichtweg, was man sät.",a:"Kontra K"},
+ {q:"Talent kann man haben, aber wenn du nichts daraus machst, dann ist und bleibt es eben nur Talent. Erfolg hingegen ist harte Arbeit.",a:"Kontra K"},
+ {q:"Erfolg ist kein Glück.",a:"Kontra K"},
+ {q:"Das Beste ist, wenn du siehst, wie dein Training und deine Disziplin belohnt werden.",a:"Kontra K"},
+ {q:"Jeder hat Schiss, bevor er in den Ring geht. Wer was anderes sagt, der lügt.",a:"Kontra K"},
+ {q:"Du erreichst halt dein Ziel nur, wenn du wirklich hart arbeitest.",a:"Kontra K"},
+ {q:"Wenn jemand besser ist, dann hat er einfach härter trainiert.",a:"Kontra K"},
+ {q:"Du musst halt einfach viel tun, dann kannst du viel erwarten.",a:"Kontra K"},
+ {q:"Nur wenn man gelernt hat zu verlieren oder weiß, wie es ist zu verlieren, dann schätzt man es auch, zu gewinnen.",a:"Kontra K"},
+ {q:"Fitness ist mehr als Eiweiß und schwere Gewichte pumpen.",a:"Kollegah"},
+ {q:"Du wirst körperlich fitter und gesünder, du gewinnst aber auch mehr Disziplin im Laufe der drei Monate. Und das zahlt sich in jedem anderen Aspekt deines Lebens aus.",a:"Kollegah"},
+ {q:"Du machst etwas aus dir. Du gehst mit einem ganz anderen Gefühl durchs Leben.",a:"Kollegah"},
+ {q:"Ich versuche die Jugend dazu zu bewegen, das Beste aus sich zu machen – sowohl körperlich als auch mental.",a:"Kollegah"},
+ {q:"Sich immer weiterbilden, schauen, wo die eigenen Talente und Stärken liegen und die dann ausbauen.",a:"Kollegah"},
+ {q:"Ich hab' einfach wieder Bock, mit Leuten zu trainieren. In einem Gym, wo einfach ein anderer Spirit ist.",a:"Kollegah"},
+ {q:"Dafür gibt es kein Geheimnis!",a:"David Lengauer"},
+ {q:"Es geht um perfekte Ernährung, perfektes Training und eiserne Disziplin. Diese 3 Punkte sind für mich das Wichtigste.",a:"David Lengauer"},
+ {q:"Man muss immer versuchen, noch besser zu werden, die Dinge immer wieder zu optimieren und das Maximum aus jedem Bereich herauszuholen. Das ist der Schlüssel zum Erfolg!",a:"David Lengauer"},
+ {q:"DISZIPLIN ist das A und O im Bodybuilding!",a:"David Lengauer"},
+ {q:"Versucht immer besser zu werden. Versucht Euch in jedem Training zu steigern, immer neue Reize zu setzen.",a:"David Lengauer"},
+ {q:"Ich möchte ganz klar das Maximum aus meinem Körper herausholen.",a:"David Lengauer"},
+ {q:"Ich wollte muskulös, selbstbewusst und einfach der Beste werden.",a:"David Lengauer"},
+ {q:"Nebenbei habe ich zu boxen begonnen, wodurch ich enorme Disziplin gelernt habe.",a:"David Lengauer"},
+ {q:"Mit 16 Jahren kam ich das erste Mal zum Kampfsport und habe erfahren, was Disziplin bedeutet.",a:"David Lengauer"},
+ {q:"Scheiß drauf – du kannst alles schaffen, wenn du fokussiert dein Ding durchziehst.",a:"David Lengauer"},
+ {q:"Durch den Sport entstand der Ehrgeiz, an mir zu arbeiten und Ziele erreichen zu können, wenn ich alles andere ausblende und meinen eigenen Weg gehe.",a:"David Lengauer"},
+ {q:"Meine Arbeitseinstellung kommt von selbst und die Motivation ist einfach die, dass ich noch lange nicht da bin, wo ich hingehöre, beziehungsweise noch lange nicht meine persönlichen Ziele erreicht habe.",a:"Fler"},
+ {q:"Diesen Respekt zu kriegen ist auch mein Ansporn.",a:"Fler"},
+ {q:"Geradlinigkeit, Aufrichtigkeit, Disziplin. Man könnte auch Fürsorglichkeit sagen. Sich gerade machen im Leben.",a:"Silla"},
+ {q:"Discipline equals freedom.",a:"Jocko Willink"},
+ {q:"Discipline is the path to freedom.",a:"Jocko Willink"},
+ {q:"Discipline defeats the infinite excuses that hold you back.",a:"Jocko Willink"},
+ {q:"Motivation is just an emotion.",a:"Jocko Willink"},
+ {q:"You can't count on motivation to be there when you need to get through truly challenging times.",a:"Jocko Willink"},
+ {q:"Motivation won't make you exercise every day; discipline will.",a:"Jocko Willink"},
+ {q:"Motivation isn't going to get you out of bed in the morning; discipline will.",a:"Jocko Willink"},
+ {q:"The shortcut is a lie.",a:"Jocko Willink"},
+ {q:"There is no easy way. There is only hard work, late nights, early mornings, practice, rehearsal, repetition, study, sweat, blood, toil, frustration, and discipline.",a:"Jocko Willink"},
+ {q:"When things are going bad: Don't get all bummed out, don't get startled, don't get frustrated. No. Just look at the issue and say: \"Good.\"",a:"Jocko Willink"},
+ {q:"Stay hard.",a:"David Goggins"},
+ {q:"Don't stop when you are tired. Stop when you are done.",a:"David Goggins"},
+ {q:"There are no prerequisites to becoming great.",a:"David Goggins"},
+ {q:"The only thing limiting your horizons is you.",a:"David Goggins"},
+ {q:"It is a lifelong quest for more knowledge, more courage, more humility, and more belief.",a:"David Goggins"},
+ {q:"Strength does not come from winning. Your struggles develop your strengths. When you go through hardships and decide not to surrender, that is strength.",a:"Arnold Schwarzenegger"},
+ {q:"You must want to be the greatest.",a:"Arnold Schwarzenegger"},
+ {q:"Going through the pain barrier, that's what makes the muscles grow. There's this pain, this aching, and going on and on and on. That's what divides a champion from a non-champion - having the guts to go through the pain barrier.",a:"Arnold Schwarzenegger"},
+ {q:"Just remember, you can't climb the ladder of success with your hands in your pockets.",a:"Arnold Schwarzenegger"},
+ {q:"You pick a goal, and then you just go after it, accomplish it, and get satisfaction out of that.",a:"Arnold Schwarzenegger"},
+ {q:"Why not? With my way of thinking, you always shoot for the top.",a:"Arnold Schwarzenegger"},
+ {q:"In sports, you learn competition means go after it, win it. And not to let anything else interfere.",a:"Arnold Schwarzenegger"},
+ {q:"I remember I arrived here with empty pockets but full of dreams, full of determination, full of desire.",a:"Arnold Schwarzenegger"},
+ {q:"I hated every minute of it. But I said to myself, 'Suffer now, and live the rest of your life as a champion.'",a:"Muhammad Ali"},
+ {q:"The fight is won or lost far away from witnesses – behind the lines, in the gym, and out there on the road, long before I dance under those lights.",a:"Muhammad Ali"},
+ {q:"Champions aren't made in gyms. Champions are made from something they have deep inside them – a desire, a dream, a vision. They have to have the skill, and the will. But the will must be stronger than the skill.",a:"Muhammad Ali"},
+ {q:"It's the repetition of affirmations that leads to belief. And once that belief becomes a deep conviction, things begin to happen.",a:"Muhammad Ali"},
+ {q:"He who is not courageous enough to take risks will accomplish nothing in life.",a:"Muhammad Ali"},
+ {q:"To be a great champion you must believe you are the best. If you're not, pretend you are.",a:"Muhammad Ali"},
+ {q:"Inside of a ring or out, ain't nothing wrong with going down. It's staying down that's wrong.",a:"Muhammad Ali"},
+ {q:"Only a man who knows what it is like to be defeated can reach down to the bottom of his soul and come up with the extra ounce of power it takes to win when the match is even.",a:"Muhammad Ali"},
+ {q:"I am the greatest, I said that even before I knew I was.",a:"Muhammad Ali"},
+ {q:"I don't need to be motivated because I'm a disciplined person. If I allocate X amount of time to do something, I'm going to do exactly that, with complete and absolute vigor for the allocated amount of time.",a:"Andrew Tate"},
+ {q:"Every time you are undisciplined, you are training yourself that it's okay.",a:"Andrew Tate"},
+ {q:"The person who goes to the gym every day regardless of how they feel will always beat the person who goes to the gym when they feel like going to the gym.",a:"Andrew Tate"},
+ {q:"For 12 years I trained 5 hours per day, six days per week, and I was motivated to train probably 25% of the time. The rest of the time I went because I am disciplined.",a:"Andrew Tate"},
+ {q:"You're going to have to work when you don't feel like working.",a:"Andrew Tate"},
+ {q:"The temporary satisfaction of quitting is outweighed by the eternal suffering of being a nobody.",a:"Andrew Tate"},
+ {q:"Discipline is the key to success. Absolutely is. If you cannot force yourself to do something that you do not want to do, how are you ever gonna put yourself through the suffering required for greatness?",a:"Andrew Tate"},
+ {q:"People who train every day do not want to train every day. They are not motivated to train every day. They forget motivation and rely on purpose and discipline.",a:"Andrew Tate"},
+ {q:"How I feel has no bearing on how I live my life. Important things always get done.",a:"Andrew Tate"},
+ {q:"You don't get to go through life only doing the things that you feel like doing.",a:"Andrew Tate"},
+ {q:"Everybody wanna be a bodybuilder, but don't nobody wanna lift no heavy ass weight.",a:"Ronnie Coleman"},
+ {q:"Ain't nothing to it but to do it.",a:"Ronnie Coleman"},
+ {q:"I have nothing in common with lazy people who blame others for their lack of success. Great things come from hard work and perseverance. No excuses.",a:"Kobe Bryant"}
+];
 const GOAL=100, LS="trainingsapp.v1", HCAP=120;
 const $=s=>document.querySelector(s);
 const newCur=()=>({sets:{},pain:null});
@@ -212,10 +306,11 @@ function rtStart(sec,label){
   if(sec<=0) return;
   tEnd=Date.now()+sec*1000; tDone=false; tLabel=label;
   const r=$("#rest"); r.classList.add("on"); r.classList.remove("end");
+  document.body.classList.add("resting");
   $("#rl").textContent="Pause nach "+label; $("#rx").textContent="Weiter";
   clearInterval(tTimer); tTimer=setInterval(rtShow,250); rtShow();
 }
-function rtHide(){clearInterval(tTimer); tDone=false; $("#rest").classList.remove("on","end")}
+function rtHide(){clearInterval(tTimer); tDone=false; $("#rest").classList.remove("on","end"); document.body.classList.remove("resting")}
 function beep(){
   try{ if(!actx) return; const o=actx.createOscillator(), g=actx.createGain(); o.frequency.value=880; g.gain.value=.15; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+.35);}catch(e){}
 }
@@ -335,6 +430,25 @@ app.addEventListener("click",ev=>{
 $("#seg").addEventListener("click",ev=>{const b=ev.target.closest("button[data-tab]"); if(!b) return; tab=b.dataset.tab; confirmDel=false; render(); window.scrollTo(0,0)});
 $("#wm").onclick=()=>{S.week=Math.max(1,S.week-1);persist();$("#wk").textContent="Woche "+S.week};
 $("#wp").onclick=()=>{S.week=Math.min(40,S.week+1);persist();$("#wk").textContent="Woche "+S.week};
+
+/* ---------- Zitate ---------- */
+let qi=0;
+const qbtn=$("#qbtn"), qpanel=$("#qpanel");
+function qShow(i){
+  qi=(i+QUOTES.length)%QUOTES.length;
+  const item=QUOTES[qi];
+  $("#qq").textContent=item.q;
+  $("#qa").textContent=item.a;
+}
+qbtn.onclick=()=>{
+  const open=qbtn.getAttribute("aria-expanded")!=="true";
+  qbtn.setAttribute("aria-expanded",open?"true":"false");
+  qbtn.setAttribute("aria-label",open?"Zitat schließen":"Zitat anzeigen");
+  if(open) qShow(qi);
+  qpanel.hidden=!open;
+};
+$("#qnext").onclick=()=>qShow(qi+1);
+document.addEventListener("keydown",ev=>{if(ev.key==="Escape"&&qbtn.getAttribute("aria-expanded")==="true") qbtn.click()});
 render();
 </script>
 </body></html>
