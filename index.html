@@ -34,7 +34,7 @@
   --bg:#f2f5f1; --surface:#ffffff; --surface2:#e8eee8; --fg:#13201a; --muted:#5a6a60; --line:#d2dbd4;
   --accent:#17794a; --accent-fg:#ffffff; --done:#dcf0e4;
   --ss:#e7eefa; --ss-line:#9bb5e2;
-  --ok:#2e9e5b; --warn:#d99a00; --bad:#d1432f;
+  --bad:#d1432f;
   --f-disp:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
 }
@@ -43,7 +43,7 @@
     --bg:#0f1612; --surface:#17211b; --surface2:#202d25; --fg:#e8efe9; --muted:#93a39a; --line:#2a382f;
     --accent:#4cc38a; --accent-fg:#07140d; --done:#1c3a2b;
     --ss:#172438; --ss-line:#3d5f95;
-    --ok:#4cc38a; --warn:#e8b12d; --bad:#ef6a57;
+    --bad:#ef6a57;
     color-scheme:dark;
   }
 }
@@ -51,7 +51,7 @@
   --bg:#0f1612; --surface:#17211b; --surface2:#202d25; --fg:#e8efe9; --muted:#93a39a; --line:#2a382f;
   --accent:#4cc38a; --accent-fg:#07140d; --done:#1c3a2b;
   --ss:#172438; --ss-line:#3d5f95;
-  --ok:#4cc38a; --warn:#e8b12d; --bad:#ef6a57;
+  --bad:#ef6a57;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -73,16 +73,6 @@ h1{font-family:var(--f-disp);font-weight:700;font-size:30px;letter-spacing:.01em
 .mgroups button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.18)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .sub{color:var(--muted);font-size:14px;margin:6px 0 14px}
-.pain{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
-.pain h2{font-family:var(--f-disp);font-size:18px;margin:0 0 8px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-.lights{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.lights button{min-height:46px;border-radius:10px;border:2px solid var(--line);background:var(--surface);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
-.lights i{width:14px;height:14px;border-radius:50%;display:block}
-.lights button[data-pain="g"] i{background:var(--ok)}
-.lights button[data-pain="y"] i{background:var(--warn)}
-.lights button[data-pain="r"] i{background:var(--bad)}
-.lights button[aria-pressed="true"]{border-color:var(--fg);background:var(--surface2)}
-.pain p{margin:8px 0 0;font-size:14px;color:var(--muted)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 .card.ss{background:var(--ss);border-color:var(--ss-line)}
 .ex-h{display:flex;gap:10px;align-items:flex-start}
@@ -126,8 +116,6 @@ h1{font-family:var(--f-disp);font-weight:700;font-size:30px;letter-spacing:.01em
 .h-i:first-of-type{border-top:0}
 .h-i b{font-weight:600}
 .h-i span{color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
-.dot.g{background:var(--ok)}.dot.y{background:var(--warn)}.dot.r{background:var(--bad)}
 .ghost{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:44px;padding:0 14px;cursor:pointer;margin-top:10px;font-weight:600}
 .ghost.warn{border-color:var(--bad);color:var(--bad)}
 #rest{position:fixed;left:0;right:0;bottom:0;z-index:9;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);display:none}
@@ -206,11 +194,6 @@ const GROUPS=[
  {id:"bizeps",n:"Bizeps"},
  {id:"trizeps",n:"Trizeps"}
 ];
-const PAIN={
- g:"Grün (0–2 von 10): normal weitertrainieren.",
- y:"Gelb (3–4 von 10): Gewicht senken, Straps nutzen, Griffe lockerer.",
- r:"Rot (5+ von 10): Zug- und Druckübungen mit Schmerz stoppen."
-};
 const QUOTES=[
  {q:"Du bist nur so gut wie du trainierst.",a:"Kontra K"},
  {q:"Nur wenn du diszipliniert bist, bist du gut in dem, was du machst.",a:"Kontra K"},
@@ -377,7 +360,7 @@ const QUOTES=[
 ];
 const LS="trainingsapp.v1";
 const $=s=>document.querySelector(s);
-const newCur=()=>({sets:{},pain:null});
+const newCur=()=>({sets:{}});
 let tab="A", confirmDel=null, confirmTimer=null, syncMode="local";
 let editing=null, pendingDate=null, pendingImport=null, groupId=null;
 let ref=null, saving=false, dirty=false, wt=null;
@@ -393,7 +376,7 @@ function noonTs(s){
   return isNaN(d.getTime())?Date.now():d.getTime();
 }
 function sanitizeCur(c){
-  const out={sets:{},pain:null};
+  const out={sets:{}};
   if(c&&c.sets&&typeof c.sets==="object"&&!Array.isArray(c.sets)){
     Object.keys(c.sets).forEach(id=>{
       if(!Array.isArray(c.sets[id])) return;
@@ -428,13 +411,14 @@ function migrate(raw){
     src.hist.forEach(h=>{
       if(!h||typeof h!=="object"||Array.isArray(h)) return;
       const t=Number(h.t);
-      next.hist.push({
+      const row={
         t:isFinite(t)?t:Date.now(),
         day:h.day==="B"?"B":"A",
         week:Math.max(1,Math.min(40,Math.round(Number(h.week))||1)),
-        pain:(h.pain==="g"||h.pain==="y"||h.pain==="r")?h.pain:null,
         sets:sanitizeSets(h.sets)
-      });
+      };
+      if(h.pain==="g"||h.pain==="y"||h.pain==="r") row.pain=h.pain;
+      next.hist.push(row);
     });
   }
   if(hadGoals){
@@ -497,7 +481,15 @@ function activeCur(day){
   if(!S.cur[day]) S.cur[day]=newCur();
   return S.cur[day];
 }
-function setsFor(day,e){const c=activeCur(day); return c.sets[e.id]||(c.sets[e.id]=blank(e))}
+function setsFor(day,e){
+  const c=activeCur(day);
+  const cur=c.sets[e.id];
+  if(!Array.isArray(cur)||cur.length!==e.sets){
+    const prev=Array.isArray(cur)?cur:[];
+    c.sets[e.id]=Array.from({length:e.sets},(_,i)=>prev[i]?{kg:prev[i].kg!=null?String(prev[i].kg):"",reps:prev[i].reps!=null?String(prev[i].reps):"",done:!!prev[i].done}:{kg:"",reps:"",done:false});
+  }
+  return c.sets[e.id];
+}
 const e1=(kg,reps)=>kg*(1+reps/30);
 const fmt=n=>(Math.round(n*10)/10).toString().replace(".",",");
 const dstr=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
@@ -598,14 +590,11 @@ function cardHtml(day,e){
    <div class="sets">${Array.from({length:e.sets},(_,i)=>rowHtml(day,e,i)).join("")}</div></section>`;
 }
 function trainHtml(day){
-  const c=activeCur(day);
   const editingHere=!!(editing&&editing.day===day);
   const dateVal=editingHere?editing.date:(pendingDate||todayYmd());
-  const btn=(k,t)=>`<button data-pain="${k}" aria-pressed="${c.pain===k}"><i></i>${t}</button>`;
   const banner=editingHere?`<p class="note editnote">Änderung der Einheit vom ${esc(dstr(noonTs(editing.date||todayYmd())))}.</p>`:"";
   const cancel=editingHere?`<button type="button" class="ghost" id="cancel-edit">Abbrechen</button>`:"";
   return `${banner}<p class="sub">${PLAN[day].sub}</p>
-   <div class="pain"><h2>Ellenbogen heute</h2><div class="lights">${btn("g","Grün")}${btn("y","Gelb")}${btn("r","Rot")}</div><p>${c.pain?PAIN[c.pain]:"Vor dem Training kurz prüfen, wie der Ellenbogen sich anfühlt."}</p></div>
    ${PLAN[day].ex.map(e=>cardHtml(day,e)).join("")}
    <label class="when">Datum<input type="date" id="when" value="${esc(dateVal)}" aria-label="Datum der Einheit"></label>
    <button class="primary" id="fin">${editingHere?"Änderungen speichern":"Einheit abschließen"}</button>
@@ -677,7 +666,7 @@ function histHtml(){
   const rows=S.hist.map((h,i)=>i).reverse().map(i=>{
     const h=S.hist[i];
     const n=Object.values(h.sets).reduce((a,b)=>a+b.length,0);
-    return `<div class="h-i"><b>${h.pain?`<i class="dot ${h.pain}"></i>`:""}Tag ${h.day} · Woche ${h.week}</b><span>${esc(dstr(h.t))}</span><span>${n} Sätze${sessionBrief(h)}</span><span></span><div class="h-act"><button type="button" class="ghost" data-edit="${i}">Ändern</button><button type="button" class="ghost${confirmDel===i?" warn":""}" data-del="${i}">${confirmDel===i?"Wirklich löschen?":"Löschen"}</button></div></div>`;
+    return `<div class="h-i"><b>Tag ${h.day} · Woche ${h.week}</b><span>${esc(dstr(h.t))}</span><span>${n} Sätze${sessionBrief(h)}</span><span></span><div class="h-act"><button type="button" class="ghost" data-edit="${i}">Ändern</button><button type="button" class="ghost${confirmDel===i?" warn":""}" data-del="${i}">${confirmDel===i?"Wirklich löschen?":"Löschen"}</button></div></div>`;
   }).join("");
   const imp=pendingImport?`<p class="note" id="imp-sum">${esc(importSummary(pendingImport))}</p><div class="iobtn"><button type="button" class="ghost warn" id="imp-ok">Wirklich laden?</button><button type="button" class="ghost" id="imp-no">Abbrechen</button></div>`:"";
   return `<div class="mgroups" role="group" aria-label="Muskelgruppe">${chips}</div>
@@ -720,12 +709,6 @@ app.addEventListener("change",ev=>{
 app.addEventListener("click",ev=>{
   const t=ev.target.closest("button"); if(!t) return;
   if(t.dataset.group){groupId=t.dataset.group; render(); return}
-  if(t.dataset.pain){
-    const c=activeCur(tab);
-    c.pain=c.pain===t.dataset.pain?null:t.dataset.pain;
-    if(!(editing&&editing.day===tab)) persist();
-    render(); return;
-  }
   if(t.dataset.chk){
     const [id,i]=t.dataset.chk.split(":"); const e=exOf(id); if(!e) return;
     const s=setsFor(tab,e)[+i]; const row=t.closest(".row");
@@ -760,11 +743,11 @@ app.addEventListener("click",ev=>{
     const ts=noonTs(dateStr);
     if(editingHere){
       const h=S.hist[editing.i];
-      if(h){h.t=ts; h.pain=c.pain; h.sets=sets}
+      if(h){h.t=ts; h.sets=sets}
       editing=null;
       toast("Änderungen gespeichert");
     }else{
-      S.hist.push({t:ts,day:tab,week:S.week,pain:c.pain,sets});
+      S.hist.push({t:ts,day:tab,week:S.week,sets});
       S.cur[tab]=newCur();
       pendingDate=null;
       toast("Einheit gespeichert ("+n+" Sätze)");
@@ -775,7 +758,7 @@ app.addEventListener("click",ev=>{
   if(t.dataset.edit!=null){
     const i=+t.dataset.edit, h=S.hist[i]; if(!h) return;
     const day=h.day==="B"?"B":"A";
-    const cur={sets:{},pain:h.pain};
+    const cur={sets:{}};
     PLAN[day].ex.forEach(e=>{
       const saved=h.sets[e.id]||[];
       cur.sets[e.id]=Array.from({length:e.sets},(_,k)=>{
