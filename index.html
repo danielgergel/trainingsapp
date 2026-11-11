@@ -68,6 +68,9 @@ h1{font-family:var(--f-disp);font-weight:700;font-size:30px;letter-spacing:.01em
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface2);padding:4px;border-radius:12px;max-width:560px;margin:10px auto 0}
 .seg button{border:0;background:transparent;min-height:42px;border-radius:9px;font-family:var(--f-disp);font-weight:700;font-size:20px;letter-spacing:.02em;color:var(--muted);cursor:pointer}
 .seg button[aria-selected="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.mgroups{display:flex;flex-wrap:wrap;gap:4px;background:var(--surface2);padding:4px;border-radius:12px;margin:0 0 12px}
+.mgroups button{border:0;background:transparent;min-height:42px;border-radius:9px;padding:0 12px;font-family:var(--f-disp);font-weight:700;font-size:18px;letter-spacing:.02em;color:var(--muted);cursor:pointer}
+.mgroups button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.18)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .sub{color:var(--muted);font-size:14px;margin:6px 0 14px}
 .pain{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px}
@@ -175,27 +178,34 @@ body.resting #qbtn,body.resting #qpanel{visibility:hidden}
 <script>
 const PLAN={
  A:{sub:"Brust, Rücken, Arme · ca. 70 Min",ex:[
-  {id:"A1",no:"1",n:"Bankdrücken",h:"Schwer, 1–2 Wdh Reserve, 2 Aufwärmsätze",sets:4,reps:"5–8",rest:150,p:"2–3 Min"},
-  {id:"A2",no:"2",n:"Schrägbank",h:"Kurzhanteln",sets:3,reps:"8–12",rest:120,p:"2 Min"},
-  {id:"A3",no:"3",n:"Latzug breit",h:"Lockerer Griff, bei Schmerz Straps",sets:3,reps:"8–12",rest:120,p:"2 Min"},
-  {id:"A4",no:"4",n:"Rudern am Gerät",h:"Brustgestützt, Straps",sets:3,reps:"8–12",rest:90,p:"90 Sek"},
-  {id:"A5",no:"5",n:"Seitheben",h:"Kabel oder Kurzhantel, leicht",sets:3,reps:"12–20",rest:75,p:"60–90 Sek"},
-  {id:"A6a",no:"6a",n:"Trizeps Pushdown",h:"Seil, Ellenbogen am Körper",sets:3,reps:"10–15",rest:0,p:"Supersatz",ss:1},
-  {id:"A6b",no:"6b",n:"Kabel-Curls",h:"Seil, Handgelenk gerade",sets:3,reps:"10–15",rest:90,p:"danach 90 Sek",ss:1},
-  {id:"A7",no:"7",n:"Hammer Curls",h:"Kurzhantel, neutraler Griff",sets:3,reps:"8–12",rest:75,p:"60–90 Sek"}
+  {id:"A1",no:"1",n:"Bankdrücken",mg:"brust",h:"Schwer, 1–2 Wdh Reserve, 2 Aufwärmsätze",sets:4,reps:"5–8",rest:150,p:"2–3 Min"},
+  {id:"A2",no:"2",n:"Schrägbank",mg:"brust",h:"Kurzhanteln",sets:3,reps:"8–12",rest:120,p:"2 Min"},
+  {id:"A3",no:"3",n:"Latzug breit",mg:"ruecken",h:"Lockerer Griff, bei Schmerz Straps",sets:3,reps:"8–12",rest:120,p:"2 Min"},
+  {id:"A4",no:"4",n:"Rudern am Gerät",mg:"ruecken",h:"Brustgestützt, Straps",sets:3,reps:"8–12",rest:90,p:"90 Sek"},
+  {id:"A5",no:"5",n:"Seitheben",mg:"schulter",h:"Kabel oder Kurzhantel, leicht",sets:3,reps:"12–20",rest:75,p:"60–90 Sek"},
+  {id:"A6a",no:"6a",n:"Trizeps Pushdown",mg:"trizeps",h:"Seil, Ellenbogen am Körper",sets:3,reps:"10–15",rest:0,p:"Supersatz",ss:1},
+  {id:"A6b",no:"6b",n:"Kabel-Curls",mg:"bizeps",h:"Seil, Handgelenk gerade",sets:3,reps:"10–15",rest:90,p:"danach 90 Sek",ss:1},
+  {id:"A7",no:"7",n:"Hammer Curls",mg:"bizeps",h:"Kurzhantel, neutraler Griff",sets:3,reps:"8–12",rest:75,p:"60–90 Sek"}
  ]},
  B:{sub:"Schultern, Bank (Volumen), Rücken, Arme · ca. 70 Min",ex:[
-  {id:"B1",no:"1",n:"Bankdrücken",h:"Ca. 85 % von Tag A",sets:3,reps:"8–10",rest:120,p:"2 Min"},
-  {id:"B2",no:"2",n:"Schulterdrücken",h:"Kurzhanteln, sitzend",sets:3,reps:"6–10",rest:120,p:"2 Min"},
-  {id:"B3",no:"3",n:"Enger Klimmzug / Latzug",h:"Neutraler Griff, Straps",sets:3,reps:"8–12",rest:120,p:"2 Min"},
-  {id:"B4a",no:"4a",n:"Rudern",h:"Gerät oder Kabel, anderer Griff",sets:3,reps:"8–12",rest:0,p:"Supersatz",ss:1},
-  {id:"B4b",no:"4b",n:"Reverse Butterfly",h:"Hintere Schulter",sets:3,reps:"12–20",rest:90,p:"danach 90 Sek",ss:1},
-  {id:"B5a",no:"5a",n:"Seitheben",h:"Kabel, einarmig",sets:3,reps:"12–20",rest:0,p:"Supersatz",ss:1},
-  {id:"B5b",no:"5b",n:"Butterfly",h:"Unten dehnen",sets:2,reps:"10–15",rest:75,p:"danach 75 Sek",ss:1},
-  {id:"B6a",no:"6a",n:"Trizeps Pushdown",h:"Ab Woche 7 leicht Überkopf",sets:3,reps:"10–15",rest:0,p:"Supersatz",ss:1},
-  {id:"B6b",no:"6b",n:"Hammer Curls",h:"Kabel mit Seil",sets:3,reps:"8–12",rest:90,p:"danach 90 Sek",ss:1}
+  {id:"B1",no:"1",n:"Bankdrücken",mg:"brust",h:"Ca. 85 % von Tag A",sets:3,reps:"8–10",rest:120,p:"2 Min"},
+  {id:"B2",no:"2",n:"Schulterdrücken",mg:"schulter",h:"Kurzhanteln, sitzend",sets:3,reps:"6–10",rest:120,p:"2 Min"},
+  {id:"B3",no:"3",n:"Enger Klimmzug / Latzug",mg:"ruecken",h:"Neutraler Griff, Straps",sets:3,reps:"8–12",rest:120,p:"2 Min"},
+  {id:"B4a",no:"4a",n:"Rudern",mg:"ruecken",h:"Gerät oder Kabel, anderer Griff",sets:3,reps:"8–12",rest:0,p:"Supersatz",ss:1},
+  {id:"B4b",no:"4b",n:"Reverse Butterfly",mg:"schulter",h:"Hintere Schulter",sets:3,reps:"12–20",rest:90,p:"danach 90 Sek",ss:1},
+  {id:"B5a",no:"5a",n:"Seitheben",mg:"schulter",h:"Kabel, einarmig",sets:3,reps:"12–20",rest:0,p:"Supersatz",ss:1},
+  {id:"B5b",no:"5b",n:"Butterfly",mg:"brust",h:"Unten dehnen",sets:2,reps:"10–15",rest:75,p:"danach 75 Sek",ss:1},
+  {id:"B6a",no:"6a",n:"Trizeps Pushdown",mg:"trizeps",h:"Ab Woche 7 leicht Überkopf",sets:3,reps:"10–15",rest:0,p:"Supersatz",ss:1},
+  {id:"B6b",no:"6b",n:"Hammer Curls",mg:"bizeps",h:"Kabel mit Seil",sets:3,reps:"8–12",rest:90,p:"danach 90 Sek",ss:1}
  ]}
 };
+const GROUPS=[
+ {id:"brust",n:"Brust"},
+ {id:"ruecken",n:"Rücken"},
+ {id:"schulter",n:"Schultern"},
+ {id:"bizeps",n:"Bizeps"},
+ {id:"trizeps",n:"Trizeps"}
+];
 const PAIN={
  g:"Grün (0–2 von 10): normal weitertrainieren.",
  y:"Gelb (3–4 von 10): Gewicht senken, Straps nutzen, Griffe lockerer.",
@@ -369,7 +379,7 @@ const LS="trainingsapp.v1";
 const $=s=>document.querySelector(s);
 const newCur=()=>({sets:{},pain:null});
 let tab="A", confirmDel=null, confirmTimer=null, syncMode="local";
-let editing=null, pendingDate=null, pendingImport=null, chartId="A1";
+let editing=null, pendingDate=null, pendingImport=null, groupId=null;
 let ref=null, saving=false, dirty=false, wt=null;
 
 function exOf(id){return [...PLAN.A.ex,...PLAN.B.ex].find(e=>e.id===id)}
@@ -494,6 +504,35 @@ const dstr=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-dig
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),1800)}
 function storeDate(v){if(editing&&editing.day===tab) editing.date=v; else pendingDate=v}
 function allEx(){return [...PLAN.A.ex.map(e=>({day:"A",e})),...PLAN.B.ex.map(e=>({day:"B",e}))]}
+function knownIds(){return new Set(allEx().map(x=>x.e.id))}
+function extraIds(){
+  const known=knownIds(), ids=[];
+  S.hist.forEach(h=>Object.keys(h.sets||{}).forEach(id=>{if(!known.has(id)&&!ids.includes(id)) ids.push(id)}));
+  return ids;
+}
+function exercisesIn(gid){
+  if(gid==="weitere") return extraIds().map(id=>({day:"",e:{id,n:id,mg:"weitere"}}));
+  return allEx().filter(x=>x.e.mg===gid);
+}
+function hasLogged(id){return S.hist.some(h=>(h.sets[id]||[]).length>0)}
+function groupHasData(gid){return exercisesIn(gid).some(x=>hasLogged(x.e.id))}
+function visibleGroups(){
+  const g=GROUPS.slice();
+  if(extraIds().length) g.push({id:"weitere",n:"Weitere"});
+  return g;
+}
+function sessionBrief(h){
+  const ids=Object.keys(h.sets||{}).filter(id=>(h.sets[id]||[]).length);
+  if(!ids.length) return "";
+  const nameOf=id=>esc((exOf(id)||{n:id}).n);
+  if(ids.length===1){
+    const a=h.sets[ids[0]];
+    const m=a.reduce((best,c)=>num(parse(c).kg)>=num(parse(best).kg)?c:best,a[0]);
+    const q=parse(m);
+    return " · "+nameOf(ids[0])+" "+dispKg(q.kg)+"×"+esc(q.reps);
+  }
+  return " · "+[...new Set(ids.map(nameOf))].join(", ");
+}
 function importSummary(o){
   const n=o.hist.length, w="Woche "+o.week;
   const full=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
@@ -612,30 +651,37 @@ function chartSvg(pts, goal){
   }
   return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Geschätztes Maximum im Verlauf">${g}</svg>`;
 }
-function histHtml(){
-  const chosen=exOf(chartId)?chartId:PLAN.A.ex[0].id;
-  chartId=chosen;
-  const ex=exOf(chosen), pts=exPoints(chosen), last=pts[pts.length-1], goal=S.goals[chosen]||null;
-  const opts=allEx().map(({day,e})=>`<option value="${e.id}"${e.id===chosen?" selected":""}>Tag ${day} · ${esc(e.n)}</option>`).join("");
+function chartCard(day,e){
+  const pts=exPoints(e.id), last=pts[pts.length-1], goal=S.goals[e.id]||null;
+  const logged=lastSets(e.id);
+  const lastLine=logged?logged.map(x=>{const q=parse(x);return dispKg(q.kg)+"×"+esc(q.reps)}).join(" · "):"";
   const head=last?`<div class="big">${fmt(last.v)} <small>kg geschätzt</small></div><div class="sub" style="margin:0">Letzter Top-Satz: ${fmt(last.k)} kg × ${last.r}</div>`
-    :`<p class="empty">Nach dem ersten Satz mit Gewicht erscheint hier die Kurve. Grundlage ist der beste Satz dieser Übung (geschätztes Maximum nach Epley).</p>`;
+    :(lastLine?`<p class="empty">Letztes Mal: ${lastLine}. Nach dem ersten Satz mit Gewicht erscheint hier die Kurve.</p>`:`<p class="empty">Noch keine Daten.</p>`);
+  return `<div class="chart" data-ex="${esc(e.id)}"><h2>${esc(e.n)}</h2>${day?`<div class="hint">Tag ${day}</div>`:""}
+    <div class="tools"><input data-goal="${esc(e.id)}" inputmode="decimal" aria-label="Zielgewicht ${esc(e.n)} in Kilogramm" placeholder="Ziel" value="${goal?esc(String(goal)):""}"></div>
+    ${head}${pts.length||goal?chartSvg(pts,goal):""}</div>`;
+}
+function histHtml(){
+  const groups=visibleGroups();
+  if(!groupId||!groups.some(g=>g.id===groupId)){
+    const hit=groups.find(g=>groupHasData(g.id));
+    groupId=(hit||groups[0]).id;
+  }
+  const chips=groups.map(g=>`<button type="button" data-group="${g.id}" aria-pressed="${g.id===groupId}">${esc(g.n)}</button>`).join("");
+  const items=exercisesIn(groupId);
+  const shown=items.filter(x=>hasLogged(x.e.id));
+  const quiet=items.filter(x=>!hasLogged(x.e.id));
+  const cards=shown.map(x=>chartCard(x.day,x.e)).join("");
+  const quietNames=quiet.map(x=>esc(x.e.n)+(x.day?` · Tag ${x.day}`:"")).join(", ");
+  const quietHtml=!shown.length?`<p class="empty">Noch keine Daten.</p>`:(quiet.length?`<p class="empty">Noch keine Daten: ${quietNames}</p>`:"");
   const rows=S.hist.map((h,i)=>i).reverse().map(i=>{
     const h=S.hist[i];
     const n=Object.values(h.sets).reduce((a,b)=>a+b.length,0);
-    const bid=h.sets.A1?"A1":(h.sets.B1?"B1":null);
-    let top="";
-    if(bid){
-      const a=h.sets[bid];
-      const m=a.reduce((best,c)=>num(parse(c).kg)>=num(parse(best).kg)?c:best,a[0]);
-      const q=parse(m);
-      top=" · Bank "+dispKg(q.kg)+"×"+esc(q.reps);
-    }
-    return `<div class="h-i"><b>${h.pain?`<i class="dot ${h.pain}"></i>`:""}Tag ${h.day} · Woche ${h.week}</b><span>${esc(dstr(h.t))}</span><span>${n} Sätze${top}</span><span></span><div class="h-act"><button type="button" class="ghost" data-edit="${i}">Ändern</button><button type="button" class="ghost${confirmDel===i?" warn":""}" data-del="${i}">${confirmDel===i?"Wirklich löschen?":"Löschen"}</button></div></div>`;
+    return `<div class="h-i"><b>${h.pain?`<i class="dot ${h.pain}"></i>`:""}Tag ${h.day} · Woche ${h.week}</b><span>${esc(dstr(h.t))}</span><span>${n} Sätze${sessionBrief(h)}</span><span></span><div class="h-act"><button type="button" class="ghost" data-edit="${i}">Ändern</button><button type="button" class="ghost${confirmDel===i?" warn":""}" data-del="${i}">${confirmDel===i?"Wirklich löschen?":"Löschen"}</button></div></div>`;
   }).join("");
   const imp=pendingImport?`<p class="note" id="imp-sum">${esc(importSummary(pendingImport))}</p><div class="iobtn"><button type="button" class="ghost warn" id="imp-ok">Wirklich laden?</button><button type="button" class="ghost" id="imp-no">Abbrechen</button></div>`:"";
-  return `<div class="chart"><h2>${esc(ex.n)}</h2>
-    <div class="tools"><select id="chart-ex" aria-label="Übung">${opts}</select><input id="goal" inputmode="decimal" aria-label="Zielgewicht in Kilogramm" placeholder="Ziel" value="${goal?esc(String(goal)):""}"></div>
-    ${head}${pts.length||goal?chartSvg(pts,goal):""}</div>
+  return `<div class="mgroups" role="group" aria-label="Muskelgruppe">${chips}</div>
+   ${cards}${quietHtml}
    <div class="hist"><h2>Einheiten</h2>${rows||'<p class="empty">Noch keine Einheit gespeichert.</p>'}</div>
    <div class="iobtn"><button type="button" class="ghost" id="exp">Daten sichern</button><button type="button" class="ghost" id="imp">Daten laden</button></div>
    ${imp}
@@ -659,20 +705,21 @@ app.addEventListener("input",ev=>{
 app.addEventListener("change",ev=>{
   const el=ev.target;
   if(el.id==="when"){storeDate(el.value); return}
-  if(el.id==="chart-ex"){chartId=el.value; render(); return}
-  if(el.id==="goal"){
+  if(el.dataset.goal){
+    const id=el.dataset.goal;
     const raw=el.value.trim().replace(",",".");
-    if(raw==="") delete S.goals[chartId];
+    if(raw==="") delete S.goals[id];
     else{
       const n=parseFloat(raw);
       if(!(isFinite(n)&&n>0)) return;
-      S.goals[chartId]=n;
+      S.goals[id]=n;
     }
     persist(); render();
   }
 });
 app.addEventListener("click",ev=>{
   const t=ev.target.closest("button"); if(!t) return;
+  if(t.dataset.group){groupId=t.dataset.group; render(); return}
   if(t.dataset.pain){
     const c=activeCur(tab);
     c.pain=c.pain===t.dataset.pain?null:t.dataset.pain;
