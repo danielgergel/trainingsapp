@@ -17,6 +17,12 @@
 .iobtn{display:flex;gap:8px;margin-top:10px}
 .iobtn .ghost{margin-top:0;flex:1}
 .editnote{margin-top:0}
+#xadd{width:100%}
+.xcard h3{margin:0;font-size:18px;font-weight:600}
+.fl{display:flex;flex-direction:column;gap:4px;margin:8px 0 0;font-weight:600;font-size:14px;color:var(--muted)}
+.fl input,.fl select{height:46px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:600 16px var(--f-body);padding:0 10px;width:100%;min-width:0}
+.xrow{display:flex;gap:8px}
+.xrow .fl{flex:1;min-width:0}
 </style>
 <title>Mein Trainingsplan</title>
 <link rel="manifest" href="manifest.json">
@@ -194,6 +200,12 @@ const GROUPS=[
  {id:"bizeps",n:"Bizeps"},
  {id:"trizeps",n:"Trizeps"}
 ];
+const EXTRA_GROUPS=[
+ {id:"beine",n:"Beine"},
+ {id:"bauch",n:"Bauch"},
+ {id:"sonstiges",n:"Sonstiges"}
+];
+const ALL_GROUPS=GROUPS.concat(EXTRA_GROUPS);
 const QUOTES=[
  {q:"Du bist nur so gut wie du trainierst.",a:"Kontra K"},
  {q:"Nur wenn du diszipliniert bist, bist du gut in dem, was du machst.",a:"Kontra K"},
@@ -362,10 +374,64 @@ const LS="trainingsapp.v1";
 const $=s=>document.querySelector(s);
 const newCur=()=>({sets:{}});
 let tab="A", confirmDel=null, confirmTimer=null, syncMode="local";
-let editing=null, pendingDate=null, pendingImport=null, groupId=null;
+let editing=null, pendingDate=null, pendingImport=null, groupId=null, xform=null, confirmEx=null, confirmExTimer=null;
 let ref=null, saving=false, dirty=false, wt=null;
 
-function exOf(id){return [...PLAN.A.ex,...PLAN.B.ex].find(e=>e.id===id)}
+function planEx(id){return [...PLAN.A.ex,...PLAN.B.ex].find(e=>e.id===id)}
+function customList(){return S.custom||[]}
+function restLabel(sec){
+  sec=Math.max(0,Math.round(Number(sec)||0));
+  if(sec<=0) return "ohne Pause";
+  if(sec%60===0) return (sec/60)+" Min";
+  return sec+" Sek";
+}
+function asEx(c){
+  return {id:c.id,no:"+",n:c.n,mg:c.mg,h:c.h||"",sets:c.sets,reps:c.reps,rest:c.rest,p:restLabel(c.rest),own:true,hidden:!!c.hidden,at:c.at};
+}
+function exOf(id){
+  const p=planEx(id);
+  if(p) return p;
+  const c=customList().find(e=>e.id===id);
+  return c?asEx(c):undefined;
+}
+function dayExercises(day){
+  const plan=PLAN[day].ex;
+  const buckets=Array.from({length:plan.length+1},()=>[]);
+  customList().forEach(c=>{
+    if(c.day!==day||c.hidden) return;
+    const at=Math.max(0,Math.min(plan.length,Number.isFinite(+c.at)?+c.at:plan.length));
+    buckets[at].push(asEx(c));
+  });
+  const out=[];
+  buckets.forEach((bucket,i)=>{
+    bucket.forEach(e=>out.push(e));
+    if(i<plan.length) out.push(plan[i]);
+  });
+  return out;
+}
+function sanitizeCustom(list){
+  if(!Array.isArray(list)) return [];
+  const out=[], seen=new Set();
+  list.forEach(x=>{
+    if(!x||typeof x!=="object") return;
+    const id=String(x.id||"");
+    if(!/^c[a-z0-9]{3,24}$/.test(id)||seen.has(id)||planEx(id)) return;
+    const n=String(x.n||"").trim().slice(0,80);
+    if(!n) return;
+    const mg=ALL_GROUPS.some(g=>g.id===x.mg)?x.mg:"sonstiges";
+    const day=x.day==="B"?"B":"A";
+    const sets=Math.max(1,Math.min(10,Math.round(Number(x.sets))||3));
+    const reps=String(x.reps||"").trim().slice(0,24)||"8–12";
+    const rest=Math.max(0,Math.min(600,Math.round(Number(x.rest))||0));
+    const h=String(x.h||"").trim().slice(0,140);
+    const at=Number.isFinite(+x.at)?Math.max(0,Math.round(+x.at)):99;
+    const row={id,n,mg,day,sets,reps,rest,h,at};
+    if(x.hidden) row.hidden=true;
+    out.push(row);
+    seen.add(id);
+  });
+  return out;
+}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
 function ymd(d){const z=n=>String(n).padStart(2,"0"); return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate())}
 function todayYmd(){return ymd(new Date())}
@@ -427,6 +493,7 @@ function migrate(raw){
       if(isFinite(n)&&n>0) next.goals[k]=n;
     });
   }else next.goals={A1:100,B1:100};
+  if(Array.isArray(src.custom)) next.custom=sanitizeCustom(src.custom);
   return {state:next, goalsAdded:!hadGoals};
 }
 
@@ -495,7 +562,11 @@ const fmt=n=>(Math.round(n*10)/10).toString().replace(".",",");
 const dstr=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"});
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),1800)}
 function storeDate(v){if(editing&&editing.day===tab) editing.date=v; else pendingDate=v}
-function allEx(){return [...PLAN.A.ex.map(e=>({day:"A",e})),...PLAN.B.ex.map(e=>({day:"B",e}))]}
+function allEx(){
+  const list=[...PLAN.A.ex.map(e=>({day:"A",e})),...PLAN.B.ex.map(e=>({day:"B",e}))];
+  customList().forEach(c=>list.push({day:c.day,e:asEx(c)}));
+  return list;
+}
 function knownIds(){return new Set(allEx().map(x=>x.e.id))}
 function extraIds(){
   const known=knownIds(), ids=[];
@@ -504,12 +575,15 @@ function extraIds(){
 }
 function exercisesIn(gid){
   if(gid==="weitere") return extraIds().map(id=>({day:"",e:{id,n:id,mg:"weitere"}}));
-  return allEx().filter(x=>x.e.mg===gid);
+  return allEx().filter(x=>x.e.mg===gid&&(!x.e.hidden||hasLogged(x.e.id)));
 }
 function hasLogged(id){return S.hist.some(h=>(h.sets[id]||[]).length>0)}
 function groupHasData(gid){return exercisesIn(gid).some(x=>hasLogged(x.e.id))}
 function visibleGroups(){
   const g=GROUPS.slice();
+  EXTRA_GROUPS.forEach(eg=>{
+    if(customList().some(c=>c.mg===eg.id&&(!c.hidden||hasLogged(c.id)))) g.push(eg);
+  });
   if(extraIds().length) g.push({id:"weitere",n:"Weitere"});
   return g;
 }
@@ -528,10 +602,12 @@ function sessionBrief(h){
 function importSummary(o){
   const n=o.hist.length, w="Woche "+o.week;
   const full=t=>new Date(t).toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric"});
-  if(!n) return "Keine Einheiten in der Datei. "+w+".";
+  const own=(o.custom||[]).filter(e=>e&&!e.hidden).length;
+  const ownTxt=own?(own===1?" 1 eigene Übung.":" "+own+" eigene Übungen."):"";
+  if(!n) return "Keine Einheiten in der Datei. "+w+"."+ownTxt;
   const ts=o.hist.map(h=>h.t).filter(t=>isFinite(t)).sort((a,b)=>a-b);
   const span=full(ts[0])+(ts.length>1?" bis "+full(ts[ts.length-1]):"");
-  return n+" "+(n===1?"Einheit":"Einheiten")+", "+span+", "+w+".";
+  return n+" "+(n===1?"Einheit":"Einheiten")+", "+span+", "+w+"."+ownTxt;
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(S)],{type:"application/json"});
@@ -584,18 +660,47 @@ function rowHtml(day,e,i){
 function cardHtml(day,e){
   const l=lastSets(e.id);
   const last=l?`Letztes Mal: ${l.map(x=>{const q=parse(x);return dispKg(q.kg)+"×"+esc(q.reps)}).join(" · ")}`:"Noch keine Werte gespeichert";
-  return `<section class="card${e.ss?" ss":""}"><div class="ex-h"><div class="no">${esc(e.no)}</div><div><h3>${esc(e.n)}</h3><div class="hint">${esc(e.h)}</div></div></div>
+  const own=e.own?`<div class="h-act"><button type="button" class="ghost" data-xedit="${esc(e.id)}">Ändern</button><button type="button" class="ghost${confirmEx===e.id?" warn":""}" data-xdel="${esc(e.id)}">${confirmEx===e.id?"Wirklich löschen?":"Löschen"}</button></div>`:"";
+  return `<section class="card${e.ss?" ss":""}" data-ex="${esc(e.id)}"><div class="ex-h"><div class="no">${esc(e.no)}</div><div><h3>${esc(e.n)}</h3>${e.h?`<div class="hint">${esc(e.h)}</div>`:""}</div></div>
    <div class="tags"><span class="tag">${e.sets} × ${esc(e.reps)}</span><span class="tag">${esc(e.p)}</span></div>
    <div class="last">${last}</div>
-   <div class="sets">${Array.from({length:e.sets},(_,i)=>rowHtml(day,e,i)).join("")}</div></section>`;
+   <div class="sets">${Array.from({length:e.sets},(_,i)=>rowHtml(day,e,i)).join("")}</div>${own}</section>`;
+}
+function posOptions(day, selected){
+  const plan=PLAN[day==="B"?"B":"A"].ex;
+  const end=selected==="end"||selected===String(plan.length);
+  let html=`<option value="end"${end?" selected":""}>Am Ende</option>`;
+  plan.forEach((e,i)=>{html+=`<option value="${i}"${String(selected)===String(i)?" selected":""}>Vor ${esc(e.n)}</option>`});
+  return html;
+}
+function formHtml(){
+  const f=xform;
+  const groups=ALL_GROUPS.map(g=>`<option value="${g.id}"${f.mg===g.id?" selected":""}>${esc(g.n)}</option>`).join("");
+  return `<section class="card xcard" id="xform"><h3>${f.id?"Übung ändern":"Eigene Übung"}</h3>
+   <label class="fl">Name<input id="xn" maxlength="80" value="${esc(f.n)}" aria-label="Name der Übung"></label>
+   <div class="xrow">
+     <label class="fl">Muskelgruppe<select id="xmg" aria-label="Muskelgruppe">${groups}</select></label>
+     <label class="fl">Tag<select id="xday" aria-label="Trainingstag"><option value="A"${f.day==="A"?" selected":""}>Tag A</option><option value="B"${f.day==="B"?" selected":""}>Tag B</option></select></label>
+   </div>
+   <div class="xrow">
+     <label class="fl">Sätze<input id="xsets" inputmode="numeric" value="${esc(f.sets)}" aria-label="Anzahl Sätze"></label>
+     <label class="fl">Wdh<input id="xreps" maxlength="24" value="${esc(f.reps)}" aria-label="Wiederholungen"></label>
+     <label class="fl">Pause<input id="xrest" inputmode="numeric" value="${esc(f.rest)}" aria-label="Pause in Sekunden"></label>
+   </div>
+   <label class="fl">Hinweis<input id="xhint" maxlength="140" value="${esc(f.h)}" placeholder="optional" aria-label="Hinweis"></label>
+   <label class="fl">Position<select id="xat" aria-label="Position">${posOptions(f.day,f.at)}</select></label>
+   <button type="button" class="primary" id="xsave">${f.id?"Änderung speichern":"Übung speichern"}</button>
+   <button type="button" class="ghost" id="xcancel">Abbrechen</button></section>`;
 }
 function trainHtml(day){
   const editingHere=!!(editing&&editing.day===day);
   const dateVal=editingHere?editing.date:(pendingDate||todayYmd());
   const banner=editingHere?`<p class="note editnote">Änderung der Einheit vom ${esc(dstr(noonTs(editing.date||todayYmd())))}.</p>`:"";
   const cancel=editingHere?`<button type="button" class="ghost" id="cancel-edit">Abbrechen</button>`:"";
+  const add=xform?formHtml():`<button type="button" class="ghost" id="xadd">Eigene Übung</button>`;
   return `${banner}<p class="sub">${PLAN[day].sub}</p>
-   ${PLAN[day].ex.map(e=>cardHtml(day,e)).join("")}
+   ${dayExercises(day).map(e=>cardHtml(day,e)).join("")}
+   ${add}
    <label class="when">Datum<input type="date" id="when" value="${esc(dateVal)}" aria-label="Datum der Einheit"></label>
    <button class="primary" id="fin">${editingHere?"Änderungen speichern":"Einheit abschließen"}</button>
    ${cancel}
@@ -682,9 +787,77 @@ function render(){
   $("#app").innerHTML=tab==="V"?histHtml():trainHtml(tab);
 }
 
+/* ---------- Eigene Übungen ---------- */
+function readForm(){
+  if(!xform||!$("#xn")) return;
+  xform.n=$("#xn").value;
+  xform.mg=$("#xmg").value;
+  xform.day=$("#xday").value==="B"?"B":"A";
+  xform.sets=$("#xsets").value;
+  xform.reps=$("#xreps").value;
+  xform.rest=$("#xrest").value;
+  xform.h=$("#xhint").value;
+  xform.at=$("#xat").value;
+}
+function newCustomId(){
+  let id;
+  do{id="c"+Math.random().toString(36).slice(2,10)}while(customList().some(e=>e.id===id)||planEx(id));
+  return id;
+}
+function moveInProgress(prev, day){
+  if(!prev||prev.day===day) return;
+  const from=S.cur[prev.day];
+  if(!from||!from.sets||!from.sets[prev.id]) return;
+  if(!S.cur[day]) S.cur[day]=newCur();
+  S.cur[day].sets[prev.id]=from.sets[prev.id];
+  delete from.sets[prev.id];
+}
+function saveCustom(){
+  readForm();
+  const n=String(xform.n||"").trim().slice(0,80);
+  if(!n){toast("Name fehlt"); const el=$("#xn"); if(el) el.focus(); return}
+  const sets=Math.round(Number(String(xform.sets).replace(",",".")));
+  if(!(sets>=1&&sets<=10)){toast("Sätze von 1 bis 10"); return}
+  const reps=String(xform.reps||"").trim().slice(0,24)||"8–12";
+  const restRaw=String(xform.rest||"").trim();
+  const rest=restRaw===""?0:Math.round(Number(restRaw.replace(",",".")));
+  if(!(rest>=0&&rest<=600)){toast("Pause bis 600 Sekunden"); return}
+  const mg=ALL_GROUPS.some(g=>g.id===xform.mg)?xform.mg:"sonstiges";
+  const day=xform.day==="B"?"B":"A";
+  const h=String(xform.h||"").trim().slice(0,140);
+  const planLen=PLAN[day].ex.length;
+  const at=xform.at==="end"||xform.at===""?planLen:Math.max(0,Math.min(planLen,parseInt(xform.at,10)||0));
+  if(!S.custom) S.custom=[];
+  if(xform.id){
+    const i=S.custom.findIndex(e=>e.id===xform.id);
+    if(i>=0){
+      moveInProgress(S.custom[i], day);
+      S.custom[i]={id:S.custom[i].id,n,mg,day,sets,reps,rest,h,at};
+    }
+  }else S.custom.push({id:newCustomId(),n,mg,day,sets,reps,rest,h,at});
+  xform=null; tab=day; confirmEx=null;
+  persist(); render(); toast("Übung gespeichert");
+}
+function deleteCustom(id){
+  if(!S.custom) return;
+  const keep=hasLogged(id);
+  if(keep){
+    const e=S.custom.find(x=>x.id===id);
+    if(e) e.hidden=true;
+  }else{
+    S.custom=S.custom.filter(x=>x.id!==id);
+    if(!S.custom.length) delete S.custom;
+    if(S.goals) delete S.goals[id];
+  }
+  ["A","B"].forEach(d=>{if(S.cur[d]&&S.cur[d].sets) delete S.cur[d].sets[id]});
+  if(xform&&xform.id===id) xform=null;
+  toast(keep?"Aus dem Plan genommen. Sätze bleiben im Verlauf.":"Übung gelöscht");
+}
+
 /* ---------- Eingaben ---------- */
 const app=$("#app");
 app.addEventListener("input",ev=>{
+  if(ev.target.closest&&ev.target.closest("#xform")){readForm(); return}
   if(ev.target.id==="when"){storeDate(ev.target.value); return}
   const f=ev.target.dataset&&ev.target.dataset.f; if(!f) return;
   const [id,i,k]=f.split(":"); const e=exOf(id); if(!e) return;
@@ -694,6 +867,7 @@ app.addEventListener("input",ev=>{
 app.addEventListener("change",ev=>{
   const el=ev.target;
   if(el.id==="when"){storeDate(el.value); return}
+  if(el.id==="xday"||el.id==="xat"||el.id==="xmg"){readForm(); render(); return}
   if(el.dataset.goal){
     const id=el.dataset.goal;
     const raw=el.value.trim().replace(",",".");
@@ -709,6 +883,37 @@ app.addEventListener("change",ev=>{
 app.addEventListener("click",ev=>{
   const t=ev.target.closest("button"); if(!t) return;
   if(t.dataset.group){groupId=t.dataset.group; render(); return}
+  if(t.id==="xadd"){
+    xform={id:"",n:"",mg:"brust",day:tab,sets:"3",reps:"8–12",rest:"90",h:"",at:"end"};
+    confirmEx=null; render();
+    const box=$("#xform"); if(box) box.scrollIntoView({block:"nearest"});
+    const name=$("#xn"); if(name) name.focus();
+    return;
+  }
+  if(t.id==="xcancel"){xform=null; render(); return}
+  if(t.id==="xsave"){saveCustom(); return}
+  if(t.dataset.xedit){
+    const c=customList().find(e=>e.id===t.dataset.xedit&&!e.hidden);
+    if(!c) return;
+    const planLen=PLAN[c.day].ex.length;
+    xform={id:c.id,n:c.n,mg:c.mg,day:c.day,sets:String(c.sets),reps:c.reps,rest:String(c.rest),h:c.h||"",at:c.at>=planLen?"end":String(c.at)};
+    confirmEx=null; tab=c.day; render();
+    const box=$("#xform"); if(box) box.scrollIntoView({block:"nearest"});
+    return;
+  }
+  if(t.dataset.xdel){
+    const id=t.dataset.xdel;
+    if(confirmEx!==id){
+      confirmEx=id;
+      clearTimeout(confirmExTimer);
+      confirmExTimer=setTimeout(()=>{confirmEx=null; if(tab!=="V") render()},4000);
+      render();
+    }else{
+      clearTimeout(confirmExTimer); confirmEx=null;
+      deleteCustom(id); persist(); render();
+    }
+    return;
+  }
   if(t.dataset.chk){
     const [id,i]=t.dataset.chk.split(":"); const e=exOf(id); if(!e) return;
     const s=setsFor(tab,e)[+i]; const row=t.closest(".row");
@@ -729,7 +934,7 @@ app.addEventListener("click",ev=>{
     const c=activeCur(tab);
     const sets=editingHere&&S.hist[editing.i]?Object.assign({},S.hist[editing.i].sets):{};
     let n=0;
-    PLAN[tab].ex.forEach(e=>{
+    dayExercises(tab).forEach(e=>{
       const a=(c.sets[e.id]||[]).filter(s=>s.done).map(s=>{
         const kg=s.kg==null?"":String(s.kg).trim();
         return kg+"x"+s.reps;
@@ -759,7 +964,7 @@ app.addEventListener("click",ev=>{
     const i=+t.dataset.edit, h=S.hist[i]; if(!h) return;
     const day=h.day==="B"?"B":"A";
     const cur={sets:{}};
-    PLAN[day].ex.forEach(e=>{
+    dayExercises(day).forEach(e=>{
       const saved=h.sets[e.id]||[];
       cur.sets[e.id]=Array.from({length:e.sets},(_,k)=>{
         if(saved[k]==null) return {kg:"",reps:"",done:false};
@@ -794,7 +999,7 @@ app.addEventListener("click",ev=>{
   if(t.id==="imp-no"){pendingImport=null; render(); return}
   if(t.id==="imp-ok"&&pendingImport){
     S=pendingImport;
-    pendingImport=null; editing=null; pendingDate=null; confirmDel=null;
+    pendingImport=null; editing=null; pendingDate=null; confirmDel=null; xform=null; confirmEx=null;
     persist(); render(); toast("Daten geladen");
   }
 });
@@ -815,7 +1020,7 @@ $("#imp-file").addEventListener("change",ev=>{
   reader.onerror=()=>toast("Datei nicht lesbar");
   reader.readAsText(f);
 });
-$("#seg").addEventListener("click",ev=>{const b=ev.target.closest("button[data-tab]"); if(!b) return; tab=b.dataset.tab; confirmDel=null; render(); window.scrollTo(0,0)});
+$("#seg").addEventListener("click",ev=>{const b=ev.target.closest("button[data-tab]"); if(!b) return; tab=b.dataset.tab; confirmDel=null; confirmEx=null; render(); window.scrollTo(0,0)});
 $("#wm").onclick=()=>{S.week=Math.max(1,S.week-1);persist();$("#wk").textContent="Woche "+S.week};
 $("#wp").onclick=()=>{S.week=Math.min(40,S.week+1);persist();$("#wk").textContent="Woche "+S.week};
 
